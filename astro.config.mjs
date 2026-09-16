@@ -1,6 +1,6 @@
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
-import node from '@astrojs/node';
+import vercel from '@astrojs/vercel';
 
 /**
  * IMPORTANT — before going live, replace `site` with the real domain.
@@ -18,15 +18,22 @@ import node from '@astrojs/node';
  * The admin routes opt out one by one with `export const prerender = false`.
  * Nothing else in src/pages carries that line, so nothing else changed shape.
  *
- * Swapping hosts is a swap of this import and this one line — @astrojs/vercel,
- * @astrojs/netlify and @astrojs/cloudflare are drop-in alternatives. Node was
- * chosen because it runs anywhere, including here, which is what makes the
- * admin panel testable locally.
+ * On Vercel the two halves land in different places: the prerendered pages are
+ * served as static files from the CDN, and each `prerender = false` route
+ * becomes a serverless function. Nothing in the admin panel keeps state on the
+ * server between requests — the session is a cookie, read by @supabase/ssr on
+ * every request — so there is nothing for a function that starts cold to have
+ * lost.
+ *
+ * Swapping hosts is a swap of this import and this one line; @astrojs/node,
+ * @astrojs/netlify and @astrojs/cloudflare are drop-in alternatives. Note that
+ * `astro preview` does not work under this adapter — `astro dev` is unaffected,
+ * because dev never loads an adapter at all.
  */
 export default defineConfig({
   site: 'https://example.com',
   trailingSlash: 'ignore',
-  adapter: node({ mode: 'standalone' }),
+  adapter: vercel(),
   integrations: [
     /* The admin pages are server-rendered, so the sitemap integration never
        sees them and would not list them anyway. The filter is here as a
