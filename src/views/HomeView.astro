@@ -1,0 +1,659 @@
+---
+import Media from '../components/Media.astro';
+import ArtworkCard from '../components/ArtworkCard.astro';
+import SectionHeader from '../components/SectionHeader.astro';
+import Statistics from '../components/Statistics.astro';
+import Disclosure from '../components/Disclosure.astro';
+import { useTranslations, path } from '../i18n/utils.js';
+import { homepageArtworks, artworkIndex } from '../data/content.js';
+import { displayAlt, displayTitle } from '../utils/display.js';
+
+const { lang = 'en' } = Astro.props;
+const t = useTranslations(lang);
+
+/* Four, because .spread__cell--1 … --4 below place exactly four cells on the
+   grid. It is a fact about the composition, not an assumption about how much
+   work exists — homepageArtworks returns fewer when there are fewer. */
+const shortlist = homepageArtworks(4);
+
+/**
+ * One slot of the opening collage.
+ *
+ * The alt text is derived from the work itself once there is a photograph to
+ * describe. It used to be the placeholder label in every case, which meant a
+ * real painting was announced to a screen reader as "Artwork placeholder 03".
+ * `label` and `index` are still passed to Media and still used — but only by
+ * its placeholder branch, when there is no image.
+ */
+const slot = (i) => {
+  const artwork = shortlist[i];
+  const index = artworkIndex(artwork?.id ?? '');
+
+  return {
+    src: artwork?.image ?? '',
+    alt: artwork ? displayAlt(artwork, t, index) : '',
+    index,
+    /* The route is the same one ArtworkCard builds for the spread below, via
+       the same helper, so the two halves of the page cannot disagree about a
+       work's URL. Empty while the slot has no work — see linkFor. */
+    href: artwork ? path(`/works/${artwork.id}`, lang) : '',
+    label: artwork ? displayTitle(artwork, t, index) : '',
+  };
+};
+
+const [main, sideTop, sideBottom] = [slot(0), slot(1), slot(2)];
+
+/**
+ * Wraps a collage frame in a link, or in nothing.
+ *
+ * An `a` when the slot holds a work, a Fragment when it does not. A frame
+ * showing "ARTWORK PLACEHOLDER" has no detail page to open, and an anchor
+ * pointing at one would be a focus stop that leads to a 404 — worse than not
+ * being a link at all.
+ *
+ * The spread below already links, because ArtworkCard is itself an anchor.
+ * This is only about the three frames in the opening collage.
+ */
+const linkFor = (s) =>
+  s.href
+    ? { Tag: 'a', attrs: { href: s.href, 'aria-label': s.label, class: 'opening__link' } }
+    : { Tag: Fragment, attrs: {} };
+
+const mainLink = linkFor(main);
+const sideTopLink = linkFor(sideTop);
+const sideBottomLink = linkFor(sideBottom);
+
+const stats = [
+  { n: t('as.stat1n'), l: t('as.stat1l') },
+  { n: t('as.stat2n'), l: t('as.stat2l') },
+  { n: t('as.stat3n'), l: t('as.stat3l') },
+];
+---
+
+<!-- ================================================== OPENING SPREAD -->
+<section class="opening">
+  <div class="shell opening__inner">
+    <div class="opening__head">
+      <p class="micro reveal">{t('home.eyebrow')}</p>
+
+      <h1 class="opening__name display">
+        <span class="reveal-line"><span>Alexandre</span></span>
+        <span class="reveal-line" data-delay="1"><span>Vassilev-</span></span>
+        <span class="reveal-line" data-delay="2"><span>Vasilevsa<span class="dot">.</span></span></span>
+      </h1>
+    </div>
+
+    <div class="opening__say">
+      <p class="opening__statement serif reveal">
+        {t('home.statement1')}<br />{t('home.statement2')}
+      </p>
+
+      {/* A short accent rule between the statement and the prose. It does the
+          job a paragraph break cannot: marks where the voice changes from the
+          artist's own line to the site describing him. Decorative, so it is a
+          span rather than an <hr> — an <hr> is a thematic break and a screen
+          reader would announce it. */}
+      <span class="opening__rule reveal" data-delay="1" aria-hidden="true"></span>
+
+      <p class="body opening__intro reveal" data-delay="2">{t('home.intro')}</p>
+
+      <div class="opening__cta reveal" data-delay="3">
+        <a class="link" href={path('/works', lang)}>
+          <span>{t('common.viewAll')}</span>
+          <span class="link__arrow" aria-hidden="true"></span>
+        </a>
+      </div>
+    </div>
+
+    <div class="opening__collage">
+      <div class="opening__main reveal">
+        <mainLink.Tag {...mainLink.attrs}>
+          <Media
+            src={main.src}
+            alt={main.alt}
+            ratio="3 / 4"
+            label={t('ph.artwork')}
+            index={main.index}
+            tone={1}
+            priority={true}
+            sizes="(max-width: 760px) 92vw, 30vw"
+          />
+        </mainLink.Tag>
+        {/* "Awaiting photography" under an actual photograph contradicts
+            itself. The caption belongs to the empty state only. */}
+        {!main.src && <p class="opening__caption micro">{t('ph.awaiting')}</p>}
+      </div>
+
+      <div class="opening__side">
+        <div class="reveal" data-delay="1">
+          <sideTopLink.Tag {...sideTopLink.attrs}>
+            <Media
+              src={sideTop.src}
+              alt={sideTop.alt}
+              ratio="4 / 3"
+              label={t('ph.artwork')}
+              index={sideTop.index}
+              tone={3}
+              sizes="(max-width: 760px) 45vw, 22vw"
+            />
+          </sideTopLink.Tag>
+        </div>
+        <div class="reveal" data-delay="2">
+          <sideBottomLink.Tag {...sideBottomLink.attrs}>
+            <Media
+              src={sideBottom.src}
+              alt={sideBottom.alt}
+              ratio="1 / 1"
+              label={t('ph.artwork')}
+              index={sideBottom.index}
+              tone={2}
+              sizes="(max-width: 760px) 45vw, 22vw"
+            />
+          </sideBottomLink.Tag>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <span class="rail" aria-hidden="true">{t('home.rail')}</span>
+</section>
+
+<!-- ================================================== STATEMENT -->
+<section class="say section--tight home-field on-tone">
+  <div class="shell">
+    <hr class="rule" />
+    <blockquote class="say__quote">
+      <p class="h1 reveal">{t('home.quote')}</p>
+      <footer class="say__note body reveal" data-delay="1">{t('home.quoteNote')}</footer>
+    </blockquote>
+  </div>
+</section>
+
+<!-- ================================================== SELECTED WORKS -->
+<section class="section home-field on-tone" aria-labelledby="selected">
+  <div class="shell">
+    <SectionHeader id="selected" label={t('home.selected')} note={t('home.selectedNote')} />
+
+    <div class="spread">
+      {
+        shortlist.map((artwork, i) => (
+          <div class:list={['spread__cell', `spread__cell--${i + 1}`, 'reveal']} data-delay={String((i % 3) + 1)}>
+            <ArtworkCard
+              artwork={artwork}
+              index={artworkIndex(artwork.id)}
+              lang={lang}
+              tone={(i % 4) + 1}
+              sizes="(max-width: 720px) 92vw, 40vw"
+            />
+          </div>
+        ))
+      }
+    </div>
+
+    <div class="spread__foot reveal">
+      <a class="link" href={path('/works', lang)}>
+        <span>{t('common.viewAll')}</span>
+        <span class="link__arrow" aria-hidden="true"></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================== ART × SPORT -->
+<section class="as-band on-tone" aria-labelledby="as-title">
+  {/* Text left, one dominant image right — a project introduction rather than
+      a banner with figures under it. The band used to run title, then a 21:9
+      strip across the full width, then the statistics, then the link: four
+      stacked full-width rows, which is the shape of a dashboard. The facts are
+      unchanged and still present; they now sit inside the reading column where
+      they read as detail, not as a metrics panel. */}
+  <div class="shell as-band__inner">
+    <div class="as-band__text">
+      <p class="micro micro--accent reveal">{t('as.chain')}</p>
+      <h2 class="h1 as-band__title reveal" id="as-title" data-delay="1">{t('home.artsportTitle')}</h2>
+      <p class="lead as-band__lead reveal" data-delay="2">{t('home.artsportLead')}</p>
+
+      <Statistics items={stats} class="as-band__stats" />
+
+      <div class="as-band__foot reveal">
+        <a class="link" href={path('/art-sport', lang)}>
+          <span>{t('home.artsportCta')}</span>
+          <span class="link__arrow" aria-hidden="true"></span>
+        </a>
+      </div>
+    </div>
+
+    <div class="as-band__media reveal" data-delay="1">
+      {/* Portrait, not the old letterbox. A 21:9 strip is a header image; a
+          tall frame beside a column of text is a plate in a monograph. */}
+      <Media
+        ratio="4 / 5"
+        label={t('ph.artsport')}
+        index="01"
+        tone={4}
+        kind="process"
+        note={t('ph.awaiting')}
+        sizes="(max-width: 860px) 92vw, 42vw"
+      />
+    </div>
+  </div>
+</section>
+
+<!-- ================================================== ABOUT TEASER -->
+<section class="section" aria-labelledby="about-teaser">
+  <div class="shell about-teaser">
+    <div class="about-teaser__media reveal">
+      <Media
+        ratio="4 / 5"
+        label={t('ph.portrait')}
+        tone={2}
+        kind="portrait"
+        note={t('ph.awaiting')}
+        sizes="(max-width: 860px) 70vw, 28vw"
+      />
+    </div>
+
+    <div class="about-teaser__text">
+      <h2 class="h2 about-teaser__title reveal" id="about-teaser">{t('home.aboutTitle')}</h2>
+      <p class="body reveal" data-delay="1">{t('home.aboutLead')}</p>
+      <div class="about-teaser__cta reveal" data-delay="2">
+        <a class="link" href={path('/about', lang)}>
+          <span>{t('home.aboutCta')}</span>
+          <span class="link__arrow" aria-hidden="true"></span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<Disclosure lang={lang} />
+
+<style>
+  /* ------------------------------------------------------------- opening */
+
+  .opening {
+    position: relative;
+    padding-top: clamp(2.5rem, 6vw, 5.5rem);
+    padding-bottom: clamp(4rem, 8vw, 7rem);
+  }
+
+  .opening__inner {
+    display: grid;
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+    grid-template-areas:
+      'head collage'
+      'say  collage';
+    grid-template-rows: auto 1fr;
+    column-gap: clamp(2rem, 5vw, 5.5rem);
+    row-gap: clamp(2rem, 4vw, 3.5rem);
+    align-items: start;
+  }
+
+  .opening__head {
+    grid-area: head;
+  }
+
+  .opening__say {
+    grid-area: say;
+  }
+
+  .opening__collage {
+    grid-area: collage;
+    display: grid;
+    grid-template-columns: 1.32fr 1fr;
+    gap: var(--gap);
+    align-items: start;
+  }
+
+  .opening__name {
+    margin-top: clamp(1.5rem, 3vw, 2.5rem);
+  }
+
+  .opening__name .dot {
+    /* the single loudest use of the accent on the whole site */
+    color: var(--accent);
+  }
+
+  .opening__statement {
+    font-size: clamp(1.4rem, 2.3vw, 2.1rem);
+    line-height: 1.18;
+    letter-spacing: -0.012em;
+    color: var(--ink);
+  }
+
+  .opening__rule {
+    display: block;
+    width: clamp(2.25rem, 4vw, 3.5rem);
+    height: 2px;
+    margin-top: clamp(1.5rem, 2.6vw, 2.25rem);
+    background: var(--accent);
+  }
+
+  .opening__intro {
+    margin-top: clamp(1.25rem, 2.2vw, 1.85rem);
+    max-width: 42ch;
+  }
+
+  .opening__cta {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: clamp(1.75rem, 3vw, 2.5rem);
+    /* mirrors the reference, where the link sits right-aligned in its column */
+    padding-right: clamp(0rem, 3vw, 3rem);
+  }
+
+  .opening__side {
+    display: grid;
+    gap: clamp(1.25rem, 2.5vw, 2.25rem);
+    margin-top: clamp(2rem, 6vw, 5rem);
+  }
+
+  /* The anchor wrapping a collage frame. `display: block` is the whole rule:
+     an inline anchor around a block figure sits on a text baseline and adds a
+     few pixels of line-height under the image, which would shift the
+     composition. Colour, decoration and the focus ring are inherited from
+     global.css, so the frames look and behave exactly as they did. */
+  .opening__link {
+    display: block;
+  }
+
+  .opening__caption {
+    margin-top: 0.85rem;
+    color: var(--ink-faint);
+  }
+
+  /* vertical micro-rail in the left margin */
+  .rail {
+    position: absolute;
+    left: max(0.75rem, calc(var(--gutter) * 0.22));
+    top: clamp(14rem, 26vw, 22rem);
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    transform-origin: center;
+    font-family: var(--sans);
+    font-size: var(--fs-micro);
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  @media (max-width: 1360px) {
+    .rail {
+      display: none;
+    }
+  }
+
+  /* ------------------------------------------------------------- statement */
+
+  .say__quote {
+    margin: 0;
+    padding-top: clamp(2.5rem, 5vw, 4.5rem);
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: clamp(1.75rem, 5vw, 5rem);
+    align-items: end;
+  }
+
+  .say__quote p {
+    max-width: 16ch;
+  }
+
+  .say__note {
+    color: var(--ink-soft);
+    max-width: 38ch;
+  }
+
+  /* ------------------------------------------------------------- spread */
+
+  .spread {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--gap);
+    row-gap: clamp(3rem, 7vw, 6.5rem);
+  }
+
+  /* a hung wall, not a row of cards: four different widths, four heights */
+  .spread__cell--1 { grid-column: 1 / span 5; }
+  .spread__cell--2 { grid-column: 7 / span 4; margin-top: clamp(2rem, 7vw, 6rem); }
+  .spread__cell--3 { grid-column: 2 / span 4; }
+  .spread__cell--4 { grid-column: 7 / span 5; margin-top: clamp(1rem, 4vw, 3.5rem); }
+
+  .spread__foot {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: clamp(3rem, 6vw, 5rem);
+  }
+
+  /* ------------------------------------------------------------- art × sport */
+
+  /* ------------------------------------------------ section transitions */
+
+  /* The quote is a pause before the works, not a section of its own with a
+     field of paper after it. Its bottom padding used to stack on top of the
+     next section's 158px, which put 259px of nothing between one line of
+     serif and the words SELECTED WORKS. The section below still brings its
+     own opening space; this only stops the two being added together. */
+  .say {
+    padding-bottom: 0;
+  }
+
+  /* ------------------------------------------------ the page's four fields */
+
+  /* One field, two sections. The statement and the works it introduces share
+     a single sheet of the secondary tone. Because .say's bottom padding is
+     zero and the section below brings its own top padding, the two
+     backgrounds meet with no seam — the eye reads one change of paper, not
+     two adjacent panels.
+
+     .on-tone rides along in the markup because the grey text tokens are set
+     against --paper: on #E7E5DF, --ink-faint falls to 3.86:1 and --accent-ink
+     to 4.06:1, both under AA. The class steps them down. Nothing about the
+     type changes; it is the same hierarchy, corrected for the sheet it is
+     printed on. */
+  .home-field {
+    background: var(--paper-deep);
+  }
+
+  .as-band {
+    /* The deepest tone on the homepage, and the only place it appears. The
+       band was the secondary tone, which made it indistinguishable from the
+       field above once that field also became secondary — two thirds of the
+       page on one colour. Art × Sport is the signature project and should be
+       the section a visitor can point at. */
+    background: var(--paper-tint);
+    padding-block: var(--section);
+    /* The tone change is the boundary. A margin on top of it was a third
+       separator doing the same job as the other two — 43px on each side,
+       between two neighbours that each already contribute 158. */
+    margin-block: 0;
+  }
+
+  /* Where paper meets the band, one section's worth of air is enough. Both
+     neighbours keep their full spacing on their far side, so the page still
+     breathes; it is only this junction, where a tone already says "new
+     sheet", that was being separated three times over. */
+  .section:has(+ .as-band) {
+    padding-bottom: var(--section-tight);
+  }
+
+  .as-band + .section {
+    padding-top: var(--section-tight);
+  }
+
+  /* The text column is the wider of the two. The image is dominant by scale
+     against its neighbours, not by taking the larger share of the page —
+     a reading column that loses to its illustration stops being read. */
+  .as-band__inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+    gap: clamp(2rem, 6vw, 6rem);
+    align-items: center;
+  }
+
+  .as-band__title {
+    margin-top: clamp(0.85rem, 2vw, 1.4rem);
+  }
+
+  .as-band__lead {
+    color: var(--ink-soft);
+    margin-top: clamp(1.25rem, 2.4vw, 2rem);
+    max-width: 46ch;
+  }
+
+  .as-band__stats {
+    border-top-color: var(--ink-faint);
+    margin-top: clamp(2rem, 4vw, 3.25rem);
+  }
+
+  .as-band__foot {
+    /* Left, under the text it belongs to. Right-aligned it floated between
+       the two columns and read as page furniture rather than as this
+       project's own link. */
+    display: flex;
+    justify-content: flex-start;
+    margin-top: clamp(2rem, 4vw, 3rem);
+  }
+
+  /* ------------------------------------------------------------- about */
+
+  .about-teaser {
+    display: grid;
+    grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
+    gap: clamp(2rem, 6vw, 6rem);
+    align-items: center;
+  }
+
+  .about-teaser__title {
+    max-width: 15ch;
+    margin-bottom: clamp(1.25rem, 2.5vw, 2rem);
+  }
+
+  .about-teaser__cta {
+    margin-top: clamp(1.75rem, 3vw, 2.5rem);
+  }
+
+  /* ============================================================= tablet */
+
+  @media (max-width: 1024px) {
+    .opening__inner {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas:
+        'head'
+        'collage'
+        'say';
+      row-gap: clamp(2rem, 5vw, 3rem);
+    }
+
+    .opening__collage {
+      grid-template-columns: 1.25fr 1fr;
+    }
+
+    .opening__side {
+      margin-top: clamp(1.5rem, 5vw, 3rem);
+    }
+
+    .opening__cta {
+      justify-content: flex-start;
+      padding-right: 0;
+    }
+
+    .say__quote {
+      grid-template-columns: minmax(0, 1fr);
+      align-items: start;
+    }
+
+    .say__quote p {
+      max-width: 20ch;
+    }
+
+    .spread__cell--1 { grid-column: 1 / span 7; }
+    .spread__cell--2 { grid-column: 8 / span 5; }
+    .spread__cell--3 { grid-column: 1 / span 5; }
+    .spread__cell--4 { grid-column: 6 / span 7; }
+
+    /* Text over image once the two columns stop being worth keeping side by
+       side. The reading order already puts the text first in the markup, so
+       stacking needs no reordering. */
+    .as-band__inner {
+      grid-template-columns: minmax(0, 1fr);
+      align-items: start;
+      gap: clamp(2rem, 6vw, 3.5rem);
+    }
+
+    .as-band__media {
+      width: min(100%, 26rem);
+    }
+
+    .about-teaser {
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+      align-items: start;
+    }
+  }
+
+  /* ============================================================= mobile */
+
+  @media (max-width: 680px) {
+    .opening {
+      padding-bottom: clamp(3rem, 10vw, 4rem);
+    }
+
+    /* the collage is recomposed, not collapsed: one lead image at full
+       width, then the two smaller works side by side underneath */
+    .opening__collage {
+      grid-template-columns: minmax(0, 1fr);
+      gap: clamp(1.25rem, 5vw, 2rem);
+    }
+
+    .opening__main {
+      padding-right: 12%;
+    }
+
+    .opening__side {
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(0.75rem, 3vw, 1.25rem);
+      margin-top: 0;
+      /* enough inset to keep the collage asymmetric, not so much that the
+         two smaller works shrink out of the composition */
+      padding-left: 11%;
+    }
+
+    .opening__statement {
+      font-size: clamp(1.35rem, 6.5vw, 1.9rem);
+    }
+
+    .spread {
+      grid-template-columns: minmax(0, 1fr);
+      row-gap: clamp(2.5rem, 9vw, 3.5rem);
+    }
+
+    /* keep a deliberate hierarchy in the single column */
+    .spread__cell--1,
+    .spread__cell--2,
+    .spread__cell--3,
+    .spread__cell--4 {
+      grid-column: 1 / -1;
+      margin-top: 0;
+    }
+
+    .spread__cell--2 { padding-left: 22%; }
+    .spread__cell--3 { padding-right: 26%; }
+    .spread__cell--4 { padding-left: 12%; }
+
+    .spread__foot,
+    .as-band__foot {
+      justify-content: flex-start;
+    }
+
+    .about-teaser {
+      grid-template-columns: minmax(0, 1fr);
+      gap: clamp(1.75rem, 7vw, 2.5rem);
+    }
+
+    .about-teaser__media {
+      width: 68%;
+    }
+  }
+</style>

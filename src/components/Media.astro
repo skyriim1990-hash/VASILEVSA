@@ -1,0 +1,231 @@
+---
+/**
+ * MEDIA
+ *
+ * The one component that stands between the layout and the photography.
+ *
+ * - `src` given  -> renders a real, lazy-loaded <img> in the reserved box.
+ * - `src` empty  -> renders a clearly marked placeholder in the same box.
+ *
+ * Because both states occupy an identical, ratio-reserved container, adding
+ * the real photographs later changes nothing about the layout.
+ *
+ * The placeholder deliberately borrows print-production language — a tonal
+ * paper field, a hairline frame and the crossed "empty frame" mark used on
+ * an unplaced image in page layout software. It reads as a production mark,
+ * not as a painting, and never as a grey developer box.
+ */
+
+import { useTranslations, getLangFromUrl } from '../i18n/utils.js';
+
+/* The short label is the same string on every frame, so it is read from
+   the dictionary here rather than threaded through a dozen call sites.
+   The language comes off the URL, which is what decides it everywhere else. */
+const t = useTranslations(getLangFromUrl(Astro.url));
+
+const {
+  src = '',
+  alt = '',
+  ratio = '3 / 4',
+  label = 'Artwork placeholder',
+  /** shown instead of `label` when the frame itself is too narrow for it */
+  shortLabel = t('ph.short'),
+  index = '',
+  note = '',
+  tone = 1,
+  kind = 'artwork',
+  sizes = '(max-width: 720px) 100vw, 50vw',
+  priority = false,
+  class: className = '',
+} = Astro.props;
+
+const hasImage = Boolean(src);
+---
+
+<figure
+  class:list={['media', `media--tone-${tone}`, `media--${kind}`, !index && 'media--noindex', className]}
+  style={`--ratio: ${ratio};`}
+>
+  {
+    hasImage ? (
+      <img
+        src={src}
+        alt={alt}
+        sizes={sizes}
+        loading={priority ? 'eager' : 'lazy'}
+        decoding="async"
+        fetchpriority={priority ? 'high' : 'auto'}
+        class="media__img"
+      />
+    ) : (
+      <div class="media__ph" role="img" aria-label={`${label}${index ? ` ${index}` : ''}`}>
+        <svg class="media__mark" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <line x1="0" y1="0" x2="100" y2="100" vector-effect="non-scaling-stroke" />
+          <line x1="100" y1="0" x2="0" y2="100" vector-effect="non-scaling-stroke" />
+        </svg>
+        <span class="media__tag">
+          <span class="media__label media__label--full">{label}</span>
+          <span class="media__label media__label--short">{shortLabel}</span>
+          {index && <span class="media__index">{index}</span>}
+        </span>
+        {note && <span class="media__note">{note}</span>}
+      </div>
+    )
+  }
+</figure>
+
+<style>
+  .media {
+    position: relative;
+    aspect-ratio: var(--ratio);
+    width: 100%;
+    overflow: hidden;
+    background: var(--paper-warm);
+    /* the label swaps on the width of this frame, not of the viewport —
+       a small work in a wide layout needs the short label just as much */
+    container-type: inline-size;
+  }
+
+  .media__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* the slow scale used on hover lives on the parent card, not here */
+    transition: transform 1200ms var(--ease);
+  }
+
+  /* ---------------------------------------------------------- placeholder */
+
+  .media__ph {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--rule);
+    background:
+      linear-gradient(150deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 62%),
+      var(--tone);
+  }
+
+  /* four warm paper tones, so a collage of placeholders still has rhythm
+     without ever suggesting the colour of an actual painting */
+  .media--tone-1 .media__ph { --tone: #f1efe9; }
+  .media--tone-2 .media__ph { --tone: #eae8e1; }
+  .media--tone-3 .media__ph { --tone: #edebe4; }
+  .media--tone-4 .media__ph { --tone: #e6e4dc; }
+
+  .media__mark {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    stroke: var(--rule);
+    stroke-width: 1;
+  }
+
+  .media__tag {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: baseline;
+    gap: 0.75em;
+    padding: 0.55em 0.9em;
+    background: var(--paper);
+    box-shadow: 0 0 0 1px var(--rule);
+    max-width: calc(100% - 2rem);
+    /* safety net: if container queries are unavailable the full label stays
+       put, and this keeps it inside the tag instead of spilling across the
+       frame. The queries below mean it should never come to this. */
+    overflow: hidden;
+  }
+
+  .media__label {
+    font-family: var(--sans);
+    font-size: var(--fs-micro);
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .media__label--short {
+    display: none;
+  }
+
+  /* below this the full label would have to be clipped, so it is dropped
+     for the short one rather than trailed off with an ellipsis */
+  @container (max-width: 260px) {
+    .media__label--full {
+      display: none;
+    }
+
+    .media__label--short {
+      display: inline;
+    }
+  }
+
+  /* narrower still and even the short label crowds the frame — the index
+     and the crossed mark carry the meaning on their own */
+  @container (max-width: 132px) {
+    .media__label {
+      display: none;
+    }
+
+    /* unless there is no index to fall back on — then the tag would be an
+       empty box, so the short label stays */
+    .media--noindex .media__label--short {
+      display: inline;
+    }
+
+    .media__tag {
+      padding: 0.4em 0.55em;
+    }
+  }
+
+  .media__index {
+    font-family: var(--serif);
+    font-size: 0.95rem;
+    line-height: 1;
+    color: var(--accent-ink);
+    flex: none;
+  }
+
+  .media__note {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0.9rem;
+    z-index: 1;
+    text-align: center;
+    font-family: var(--sans);
+    font-size: var(--fs-micro);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    /* sits on the tinted field, not on paper — needs the darker step */
+    color: var(--ink-on-tint);
+  }
+
+  /* the reserved film area reads a shade cooler and carries no cross */
+  .media--video .media__mark {
+    display: none;
+  }
+
+  .media--video .media__ph {
+    border-style: dashed;
+  }
+
+  @media (max-width: 560px) {
+    .media__tag {
+      padding: 0.5em 0.7em;
+      gap: 0.5em;
+    }
+
+    .media__label {
+      font-size: 0.625rem;
+      letter-spacing: 0.12em;
+    }
+  }
+</style>

@@ -1,0 +1,71 @@
+---
+/**
+ * The opening of every interior page: a small index label, a display-serif
+ * title set on its own line, and an optional lead paragraph offset to the
+ * right so the page never opens as a centred block.
+ */
+const { label = '', title, lead = '', count = '' } = Astro.props;
+---
+
+<header class="page-head">
+  <div class="shell">
+    <div class="page-head__row">
+      {label && <p class="micro reveal">{label}</p>}
+      {count && <p class="micro page-head__count reveal" data-delay="1">{count}</p>}
+    </div>
+
+    <h1 class="page-head__title h1">
+      <span class="reveal-line"><span>{title}</span></span>
+    </h1>
+
+    {
+      lead && (
+        <div class="page-head__lead">
+          <p class="lead reveal" data-delay="2">{lead}</p>
+        </div>
+      )
+    }
+  </div>
+</header>
+
+<style>
+  .page-head {
+    padding-top: clamp(3rem, 8vw, 7rem);
+    padding-bottom: clamp(2.5rem, 5vw, 4.5rem);
+  }
+
+  .page-head__row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--gap);
+    padding-bottom: clamp(1.5rem, 4vw, 3rem);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .page-head__count {
+    color: var(--ink-faint);
+  }
+
+  .page-head__title {
+    padding-top: clamp(1.5rem, 4vw, 3rem);
+    max-width: 18ch;
+  }
+
+  .page-head__lead {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: clamp(1.75rem, 4vw, 3rem);
+  }
+
+  .page-head__lead .lead {
+    width: min(100%, 46ch);
+    color: var(--ink-soft);
+  }
+
+  @media (max-width: 720px) {
+    .page-head__lead {
+      justify-content: flex-start;
+    }
+  }
+</style>

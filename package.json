@@ -1,0 +1,22 @@
+{
+  "name": "vasilevsa",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Official website of contemporary artist Alexandre Vassilev-Vasilevsa",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "legacy-sql": "node scripts/legacy-to-sql.mjs"
+  },
+  "dependencies": {
+    "@astrojs/node": "^9.5.5",
+    "@astrojs/sitemap": "^3.7.4",
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.116.0",
+    "astro": "^5.14.1"
+  }
+}

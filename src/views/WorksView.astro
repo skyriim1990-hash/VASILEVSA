@@ -1,0 +1,205 @@
+---
+import PageHeader from '../components/PageHeader.astro';
+import ArtworkGrid from '../components/ArtworkGrid.astro';
+import Disclosure from '../components/Disclosure.astro';
+import { useTranslations } from '../i18n/utils.js';
+import { artworks, CATEGORIES } from '../data/content.js';
+
+const { lang = 'en' } = Astro.props;
+const t = useTranslations(lang);
+
+const filters = CATEGORIES.map((c) => ({
+  id: c.id,
+  label: c.label,
+}));
+---
+
+<!-- the count lives on the filter row, where it tracks the active category.
+     Printing the same total twice on one screen reads as a mistake. -->
+<PageHeader label={t('common.index')} title={t('works.title')} lead={t('works.lead')} />
+
+<div class="shell">
+  <nav class="filters" aria-label={t('works.filterLabel')}>
+    <ul class="filters__list" role="list">
+      {
+        filters.map((f) => (
+          <li>
+            <button
+              type="button"
+              class:list={['filters__btn', f.id === 'all' && 'is-active']}
+              data-filter={f.id}
+              aria-pressed={f.id === 'all' ? 'true' : 'false'}
+            >
+              {f.label}
+            </button>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="filters__count micro" data-filter-count data-label={t('works.count')} aria-live="polite"></p>
+  </nav>
+</div>
+
+<section class="section--tight works__band on-tone">
+  <div class="shell">
+    <ArtworkGrid items={artworks} lang={lang} />
+    <p class="works__empty" data-empty hidden>{t('works.empty')}</p>
+  </div>
+</section>
+
+<Disclosure lang={lang} />
+
+<style>
+  /* The grid sits on the secondary tone while the page header and the filter
+     row stay on paper. The filters then belong to the header rather than
+     floating above the pictures, and the paintings get a field of their own
+     that is a shade quieter than the page around them. Full-bleed, because
+     a tone that stops at the shell edge is a card, and the brief is a gallery
+     wall, not a dashboard. */
+  .works__band {
+    background: var(--paper-deep);
+  }
+
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem var(--gap);
+    padding-bottom: 1.1rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .filters__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem clamp(1.1rem, 2.4vw, 2.25rem);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .filters__btn {
+    position: relative;
+    appearance: none;
+    background: none;
+    border: 0;
+    padding: 0 0 0.35rem;
+    cursor: pointer;
+    font-family: var(--sans);
+    font-size: var(--fs-micro);
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    white-space: nowrap;
+    transition: color 400ms var(--ease);
+  }
+
+  .filters__btn::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: var(--accent-ink);
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 450ms var(--ease);
+  }
+
+  .filters__btn:hover,
+  .filters__btn.is-active {
+    color: var(--accent-ink);
+  }
+
+  .filters__btn:hover::after,
+  .filters__btn.is-active::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+
+  .filters__count {
+    color: var(--ink-faint);
+  }
+
+  .works__empty {
+    padding-block: clamp(3rem, 8vw, 6rem);
+    color: var(--ink-soft);
+    font-size: var(--fs-lead);
+  }
+
+  @media (max-width: 620px) {
+    .filters {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+</style>
+
+<script>
+  const buttons = document.querySelectorAll('[data-filter]');
+  const cells = document.querySelectorAll('[data-grid] > [data-category]');
+  const empty = document.querySelector('[data-empty]');
+  const counter = document.querySelector('[data-filter-count]');
+
+  if (buttons.length && cells.length) {
+    const countLabel = counter instanceof HTMLElement ? counter.dataset.label || '' : '';
+
+    const matches = (cell, filter) => {
+      if (filter === 'all') return true;
+      if (filter === 'selected') return cell.dataset.selected === 'true';
+      return cell.dataset.category === filter;
+    };
+
+    /**
+     * `force` reveals every matching cell immediately.
+     *
+     * It must stay off for the initial call. A cell hidden by `hidden` is
+     * display:none, so the scroll observer can never see it — which is why
+     * a cell filtered back into view has to be revealed by hand. But doing
+     * that on first load marks the whole grid as revealed before the
+     * visitor has scrolled anywhere, and the works page loses its entrance
+     * entirely. Only user-initiated filtering forces it.
+     */
+    const apply = (filter, force = false) => {
+      let visible = 0;
+
+      cells.forEach((cell) => {
+        const show = matches(cell, filter);
+        cell.hidden = !show;
+        if (show) {
+          visible += 1;
+          if (force) cell.classList.add('is-in');
+        }
+      });
+
+      if (empty instanceof HTMLElement) empty.hidden = visible > 0;
+      if (counter instanceof HTMLElement) {
+        counter.textContent = visible ? `${String(visible).padStart(2, '0')} ${countLabel}`.trim() : '';
+      }
+
+      buttons.forEach((btn) => {
+        const active = btn.dataset.filter === filter;
+        btn.classList.toggle('is-active', active);
+        btn.setAttribute('aria-pressed', String(active));
+      });
+
+      // keep the choice in the URL so a filtered view can be shared
+      const url = new URL(window.location.href);
+      if (filter === 'all') url.searchParams.delete('c');
+      else url.searchParams.set('c', filter);
+      history.replaceState(null, '', url);
+    };
+
+    buttons.forEach((btn) => {
+      btn.addEventListener('click', () => apply(btn.dataset.filter || 'all', true));
+    });
+
+    const initial = new URL(window.location.href).searchParams.get('c');
+    const known = [...buttons].some((b) => b.dataset.filter === initial);
+    // arriving on ?c=abstract is still a first load, so the reveal stands
+    apply(known && initial ? initial : 'all');
+  }
+</script>

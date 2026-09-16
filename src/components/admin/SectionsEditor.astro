@@ -1,0 +1,210 @@
+---
+/**
+ * SECTIONS EDITOR
+ *
+ * The body of /admin/about and /admin/art-sport: a list of editorial blocks,
+ * each with its own form, plus one form for adding another.
+ *
+ * ---------------------------------------------------------------------------
+ * ONE FORM PER SECTION, NOT ONE FORM FOR THE PAGE
+ * ---------------------------------------------------------------------------
+ * A single form around everything would be fewer submits, and would mean a
+ * validation error in section four discards the edits to sections one through
+ * three. Separate forms fail separately. It also means each block can carry
+ * its own file input without the browser sending five images on every save.
+ *
+ * The cost is that ids have to be namespaced by section, which is what the
+ * idPrefix props below are doing. Two forms on a page sharing an id is the
+ * usual way a label quietly stops working.
+ */
+
+import Field from './Field.astro';
+import Toggle from './Toggle.astro';
+import ImageField from './ImageField.astro';
+import ConfirmAction from './ConfirmAction.astro';
+
+const {
+  sections = [],
+  action,
+  /** which storage bucket new images on this page go to */
+  bucket = 'artworks',
+  imageLabel = 'Image',
+  imageHint = '',
+} = Astro.props;
+---
+
+<div class="stack">
+  {
+    sections.length === 0 && (
+      <p class="empty">
+        No sections yet. Add the first one below — it will appear on the public
+        page once published.
+      </p>
+    )
+  }
+
+  {
+    sections.map((section, i) => {
+      const prefix = `s${i}`;
+      const heading = section.heading || section.section_key;
+      /* The save button lives outside its form — see the delete note below. */
+      const formId = `section-${i}`;
+
+      return (
+        <details class="panel" open={i === 0}>
+          <summary class="section__summary">
+            <span class="section__name">{heading}</span>
+            <span class="flags">
+              <span class:list={['flag', section.is_published && 'flag--on']}>
+                {section.is_published ? 'Published' : 'Draft'}
+              </span>
+              <span class="flag">#{section.sort_order}</span>
+            </span>
+          </summary>
+
+          <form class="form" id={formId} method="POST" action={action} enctype="multipart/form-data">
+            <input type="hidden" name="_action" value="save" />
+            <input type="hidden" name="id" value={section.id} />
+
+            <div class="form__grid">
+              <Field idPrefix={prefix} name="heading" label="Heading"
+                value={section.heading} wide />
+
+              <Field idPrefix={prefix} name="body" label="Body" type="textarea"
+                value={section.body} rows={8} wide
+                hint="Plain text. Blank lines separate paragraphs on the public page." />
+
+              <Field idPrefix={prefix} name="sort_order" label="Sort order"
+                type="number" value={section.sort_order} step="1" inputmode="numeric"
+                hint="Lower numbers appear higher on the page." />
+            </div>
+
+            <div>
+              <Toggle idPrefix={prefix} name="is_published" label="Published"
+                checked={section.is_published}
+                hint="Unpublished sections are not rendered on the public page." />
+            </div>
+
+            <ImageField
+              idPrefix={prefix}
+              media={section.media}
+              bucket={bucket}
+              label={imageLabel}
+              hint={imageHint}
+            />
+
+            <p class="section__key">
+              key: <code>{section.section_key}</code>
+            </p>
+          </form>
+
+          {/* Outside the form above, not inside it. ConfirmAction renders a
+              <form> of its own, and a form nested in a form is dropped by the
+              HTML parser — its hidden fields end up on the outer form, where
+              `_action: delete` arrives behind the outer form's own
+              `_action: save` and loses. The delete button would have saved the
+              section and reported success. The save button is tied back to its
+              form by id. */}
+          <div class="form__foot form__foot--split form__foot--detached">
+            <button type="submit" class="btn" form={formId}>Save section</button>
+
+            <ConfirmAction
+              action={action}
+              label="Delete section"
+              question={`Delete the “${heading}” section? Its text is removed. This cannot be undone.`}
+              fields={{ _action: 'delete', id: section.id }}
+            />
+          </div>
+        </details>
+      );
+    })
+  }
+
+  <div class="panel">
+    <p class="panel__title">Add a section</p>
+
+    <form class="form" method="POST" action={action} enctype="multipart/form-data">
+      <input type="hidden" name="_action" value="create" />
+
+      <div class="form__grid">
+        <Field idPrefix="new" name="heading" label="Heading" wide />
+
+        <Field idPrefix="new" name="body" label="Body" type="textarea" rows={6} wide />
+
+        <Field idPrefix="new" name="section_key" label="Key"
+          hint="A short identifier, unique on this page. Left empty, it is made from the heading." />
+
+        <Field idPrefix="new" name="sort_order" label="Sort order" type="number"
+          value="0" step="1" inputmode="numeric" />
+      </div>
+
+      <div>
+        <Toggle idPrefix="new" name="is_published" label="Published" />
+      </div>
+
+      <ImageField
+        idPrefix="new"
+        media={null}
+        bucket={bucket}
+        label={imageLabel}
+        hint={imageHint}
+        allowRemove={false}
+      />
+
+      <div class="form__foot">
+        <button type="submit" class="btn">Add section</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+  .section__summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    cursor: pointer;
+    list-style: none;
+    padding-bottom: 0.75rem;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid var(--rule-soft, #e7e5df);
+  }
+
+  .section__summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .section__name {
+    font-family: var(--serif);
+    font-size: 1.1rem;
+    /* an unnamed section still needs a clickable row, not a 0px one */
+    min-height: 1.4em;
+  }
+
+  /* the disclosure state has to be visible without relying on the marker
+     that was just removed */
+  .section__summary::after {
+    content: 'Open';
+    font-size: 0.5625rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    order: 3;
+  }
+
+  details[open] > .section__summary::after {
+    content: 'Close';
+  }
+
+  .section__key {
+    margin: 0;
+    font-size: 0.6875rem;
+    color: var(--ink-faint);
+  }
+
+  .section__key code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+</style>

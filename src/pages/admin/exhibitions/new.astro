@@ -1,0 +1,47 @@
+---
+/**
+ * /admin/exhibitions/new
+ *
+ * Post-redirect-get on success, same as the works create route: a reload after
+ * saving must not record the same show twice.
+ */
+
+export const prerender = false;
+
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import ExhibitionForm from '../../../components/admin/ExhibitionForm.astro';
+import Note from '../../../components/admin/Note.astro';
+import { createExhibition, readExhibitionForm } from '../../../lib/admin/exhibitionForm.js';
+import { redirectWith } from '../../../lib/admin/forms.js';
+
+const supabase = Astro.locals.supabase;
+
+let errors = [];
+let submitted = null;
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const result = await createExhibition(supabase, form);
+
+  if (result.id) {
+    return redirectWith(Astro, `/admin/exhibitions/${result.id}`, { m: 'created' });
+  }
+
+  errors = result.errors;
+  submitted = readExhibitionForm(form, null).values;
+}
+---
+
+<AdminLayout
+  title="Add exhibition"
+  lead="Record only what is documented. Anything left empty renders as an em dash on the public timeline, never as a guess."
+>
+  {errors.length > 0 && <Note tone="error" text="Not saved:" items={errors} />}
+
+  <ExhibitionForm
+    exhibition={submitted}
+    isNew={true}
+    action="/admin/exhibitions/new"
+    submitLabel="Create exhibition"
+  />
+</AdminLayout>

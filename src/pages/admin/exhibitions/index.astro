@@ -1,0 +1,158 @@
+---
+/**
+ * /admin/exhibitions
+ *
+ * Same pattern as the works list: filtered and paged by the database, with
+ * every control in the URL.
+ */
+
+export const prerender = false;
+
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import Note from '../../../components/admin/Note.astro';
+import Thumb from '../../../components/admin/Thumb.astro';
+import Pager from '../../../components/admin/Pager.astro';
+import ConfirmAction from '../../../components/admin/ConfirmAction.astro';
+import { listExhibitions } from '../../../lib/admin/queries.js';
+import { messageFor, isErrorCode } from '../../../lib/admin/forms.js';
+
+const PER_PAGE = 25;
+
+const supabase = Astro.locals.supabase;
+const params = Astro.url.searchParams;
+
+const search = (params.get('q') ?? '').trim();
+const status = params.get('status') ?? '';
+const page = Math.max(1, Number.parseInt(params.get('page') ?? '1', 10) || 1);
+
+const { data: exhibitions, count, error } = await listExhibitions(supabase, {
+  search,
+  status,
+  page,
+  perPage: PER_PAGE,
+});
+
+const total = count ?? 0;
+const filtered = Boolean(search || status);
+
+const code = params.get('m') ?? '';
+const message = messageFor(code);
+
+/** The location line, built only from the parts that were actually supplied. */
+function place(item) {
+  return [item.city, item.country].filter(Boolean).join(', ') || '—';
+}
+---
+
+<AdminLayout
+  title="Exhibitions"
+  lead="The exhibition record. Nothing is inferred or filled in — an empty field stays empty on the public timeline."
+>
+  <Fragment slot="actions">
+    <a class="btn" href="/admin/exhibitions/new">+ Add exhibition</a>
+  </Fragment>
+
+  {message && <Note tone={isErrorCode(code) ? 'error' : 'ok'} text={message} />}
+  {error && <Note tone="error" text={`Could not read the exhibitions: ${error.message}`} />}
+
+  <form class="filterbar" method="GET" role="search">
+    <div class="field">
+      <label class="field__label" for="q">Search</label>
+      <input type="search" id="q" name="q" value={search} placeholder="Title, venue or city" />
+    </div>
+
+    <div class="field">
+      <label class="field__label" for="status">Status</label>
+      <select id="status" name="status">
+        <option value="" selected={status === ''}>All</option>
+        <option value="published" selected={status === 'published'}>Published</option>
+        <option value="draft" selected={status === 'draft'}>Draft</option>
+      </select>
+    </div>
+
+    <div class="filterbar__go">
+      <button type="submit" class="btn btn--quiet">Apply</button>
+    </div>
+
+    {filtered && (
+      <div class="filterbar__go">
+        <a class="btn btn--quiet" href="/admin/exhibitions">Clear</a>
+      </div>
+    )}
+  </form>
+
+  {
+    exhibitions && exhibitions.length > 0 ? (
+      <>
+        <div class="tablewrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col"><span class="sr-only">Image</span></th>
+                <th scope="col">Year</th>
+                <th scope="col">Title / venue</th>
+                <th scope="col">Location</th>
+                <th scope="col">Type</th>
+                <th scope="col">Status</th>
+                <th scope="col"><span class="sr-only">Actions</span></th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {exhibitions.map((item) => (
+                <tr>
+                  <td><Thumb media={item.media} ratio="46 / 34" /></td>
+
+                  <td class="table__num">{item.year ?? '—'}</td>
+
+                  <td>
+                    <a class="table__title" href={`/admin/exhibitions/${item.id}`}>
+                      {item.title || <em>Untitled</em>}
+                    </a>
+                    <span class="table__sub">{item.venue || '—'}</span>
+                  </td>
+
+                  <td>{place(item)}</td>
+
+                  <td>
+                    {item.exhibition_type ? (
+                      <span class="flag">{item.exhibition_type}</span>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
+
+                  <td>
+                    <span class:list={['flag', item.is_published && 'flag--on']}>
+                      {item.is_published ? 'Published' : 'Draft'}
+                    </span>
+                  </td>
+
+                  <td>
+                    <div class="table__actions">
+                      <a class="btn btn--quiet btn--small" href={`/admin/exhibitions/${item.id}`}>Edit</a>
+
+                      <ConfirmAction
+                        action={`/admin/exhibitions/${item.id}`}
+                        question={`Delete “${item.title || item.venue || 'this entry'}”? This cannot be undone.`}
+                        fields={{ _action: 'delete', _return: 'list' }}
+                      />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <Pager page={page} perPage={PER_PAGE} total={total} url={Astro.url} />
+      </>
+    ) : (
+      <p class="empty">
+        {filtered
+          ? 'No exhibition matches those filters.'
+          : 'No exhibitions recorded yet.'}
+      </p>
+    )
+  }
+</AdminLayout>

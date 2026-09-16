@@ -1,0 +1,245 @@
+---
+/**
+ * /admin/categories
+ *
+ * The four categories that drive the Works filters, editable.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY "ALL" AND "SELECTED" ARE NOT HERE
+ * ---------------------------------------------------------------------------
+ * The hardcoded CATEGORIES array in src/data/artworks.js lists six entries.
+ * Two of them — All and Selected Works — are not categories. No work belongs
+ * to "All"; it is the absence of a filter. "Selected" is the is_selected flag
+ * on the artwork itself, which is why it can overlap with every real category.
+ *
+ * They are filter controls in the interface and they stay there. Adding them
+ * as rows would let a work be filed under "All", which means nothing, and
+ * would put two competing definitions of "selected" in the database.
+ *
+ * ---------------------------------------------------------------------------
+ * DELETING
+ * ---------------------------------------------------------------------------
+ * artworks.category_id is ON DELETE SET NULL, so removing a category leaves
+ * its works in place and uncategorised rather than deleting them. The count
+ * beside each row says how many that would be.
+ */
+
+export const prerender = false;
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import Note from '../../components/admin/Note.astro';
+import Field from '../../components/admin/Field.astro';
+import Toggle from '../../components/admin/Toggle.astro';
+import ConfirmAction from '../../components/admin/ConfirmAction.astro';
+import {
+  listCategories, insertCategory, updateCategory, deleteCategory,
+} from '../../lib/admin/queries.js';
+import { describeWriteError } from '../../lib/admin/artworkForm.js';
+import {
+  redirectWith, messageFor, isErrorCode, isUuid, str, bool, int, ensureSlug, slugify,
+} from '../../lib/admin/forms.js';
+
+const supabase = Astro.locals.supabase;
+let errors = [];
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const action = str(form, '_action');
+  const label = str(form, 'label');
+  const slugInput = str(form, 'slug');
+
+  if (action === 'create') {
+    if (!label) {
+      /* categories_label_present: the CHECK would reject it too, but with a
+         constraint name rather than a sentence. */
+      errors = ['A category needs a label.'];
+    } else if (slugInput && !slugify(slugInput)) {
+      errors = ['The slug needs at least one letter or number.'];
+    } else {
+      const { error } = await insertCategory(supabase, {
+        slug: ensureSlug(slugInput || label, 'category'),
+        label,
+        sort_order: int(form, 'sort_order', 0),
+        is_published: bool(form, 'is_published'),
+      });
+
+      if (!error) return redirectWith(Astro, '/admin/categories', { m: 'created' });
+      errors = [describeWriteError(error, 'category')];
+    }
+  } else {
+    const id = str(form, 'id');
+    if (!isUuid(id)) return redirectWith(Astro, '/admin/categories', { m: 'not-found' });
+
+    if (action === 'delete') {
+      const { error } = await deleteCategory(supabase, id);
+      if (!error) return redirectWith(Astro, '/admin/categories', { m: 'deleted' });
+      errors = [describeWriteError(error, 'category')];
+    } else if (action === 'save') {
+      if (!label) {
+        errors = ['A category needs a label.'];
+      } else {
+        const { error } = await updateCategory(supabase, id, {
+          label,
+          sort_order: int(form, 'sort_order', 0),
+          is_published: bool(form, 'is_published'),
+        });
+
+        if (!error) return redirectWith(Astro, '/admin/categories', { m: 'saved' });
+        errors = [describeWriteError(error, 'category')];
+      }
+    }
+  }
+}
+
+const { data: categories, error } = await listCategories(supabase);
+
+/* One count per category, so a delete can say what it would orphan. Four
+   categories means four head-only counts — cheap enough not to need a join. */
+const counts = {};
+
+for (const category of categories ?? []) {
+  const { count } = await supabase
+    .from('artworks')
+    .select('id', { count: 'exact', head: true })
+    .eq('category_id', category.id);
+
+  counts[category.id] = count ?? 0;
+}
+
+const code = Astro.url.searchParams.get('m') ?? '';
+const message = messageFor(code);
+---
+
+<AdminLayout
+  title="Categories"
+  lead="What the Works filters are built from. The slug is fixed once created — it is what the public filter URLs use."
+>
+  <Fragment slot="actions">
+    <a class="btn btn--quiet" href="/admin/works">Back to works</a>
+  </Fragment>
+
+  {message && <Note tone={isErrorCode(code) ? 'error' : 'ok'} text={message} />}
+  {errors.length > 0 && <Note tone="error" text="Not saved:" items={errors} />}
+  {error && <Note tone="error" text={`Could not read the categories: ${error.message}`} />}
+
+  <Note tone="warn">
+    <p>
+      <b>All</b> and <b>Selected Works</b> are not categories and are not listed
+      here. The first is the absence of a filter; the second is the
+      <i> Selected</i> switch on each work. Both stay as controls in the
+      interface.
+    </p>
+  </Note>
+
+  {
+    categories && categories.length > 0 ? (
+      <div class="tablewrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Label</th>
+              <th scope="col">Slug</th>
+              <th scope="col" class="table__num">Order</th>
+              <th scope="col">Visible</th>
+              <th scope="col" class="table__num">Works</th>
+              <th scope="col"><span class="sr-only">Actions</span></th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {categories.map((category, i) => (
+              <tr>
+                <td>
+                  <form method="POST" id={`cat-${i}`}>
+                    <input type="hidden" name="_action" value="save" />
+                    <input type="hidden" name="id" value={category.id} />
+                    <label class="sr-only" for={`c${i}-label`}>Label</label>
+                    <input type="text" id={`c${i}-label`} name="label" value={category.label} required />
+                  </form>
+                </td>
+
+                <td><code>{category.slug}</code></td>
+
+                <td class="table__num">
+                  <label class="sr-only" for={`c${i}-sort`}>Sort order</label>
+                  <input
+                    type="number"
+                    id={`c${i}-sort`}
+                    name="sort_order"
+                    form={`cat-${i}`}
+                    value={category.sort_order}
+                    step="1"
+                    style="width:5rem;"
+                  />
+                </td>
+
+                <td>
+                  <label class="check" for={`c${i}-pub`} style="padding:0;">
+                    <input
+                      type="checkbox"
+                      id={`c${i}-pub`}
+                      name="is_published"
+                      form={`cat-${i}`}
+                      value="1"
+                      checked={category.is_published}
+                    />
+                    <span class="sr-only">Visible on the site</span>
+                  </label>
+                </td>
+
+                <td class="table__num">{counts[category.id]}</td>
+
+                <td>
+                  <div class="table__actions">
+                    <button type="submit" form={`cat-${i}`} class="btn btn--quiet btn--small">
+                      Save
+                    </button>
+
+                    <ConfirmAction
+                      action="/admin/categories"
+                      question={
+                        counts[category.id] > 0
+                          ? `Delete “${category.label}”? ${counts[category.id]} work${counts[category.id] > 1 ? 's' : ''} will become uncategorised. The works themselves are not deleted.`
+                          : `Delete “${category.label}”? Nothing uses it.`
+                      }
+                      fields={{ _action: 'delete', id: category.id }}
+                    />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    ) : (
+      <p class="empty">No categories. The Works filters will be empty until one exists.</p>
+    )
+  }
+
+  <div class="panel" style="margin-top:1.5rem;">
+    <p class="panel__title">Add a category</p>
+
+    <form class="form" method="POST">
+      <input type="hidden" name="_action" value="create" />
+
+      <div class="form__grid">
+        <Field idPrefix="new" name="label" label="Label" required
+          hint="What appears on the filter row." />
+
+        <Field idPrefix="new" name="slug" label="Slug"
+          hint="Used in the filter URL. Left empty, it is made from the label." />
+
+        <Field idPrefix="new" name="sort_order" label="Sort order" type="number"
+          value="0" step="1" inputmode="numeric" />
+      </div>
+
+      <div>
+        <Toggle idPrefix="new" name="is_published" label="Visible on the site" checked={true} />
+      </div>
+
+      <div class="form__foot">
+        <button type="submit" class="btn">Add category</button>
+      </div>
+    </form>
+  </div>
+</AdminLayout>

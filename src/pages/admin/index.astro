@@ -1,0 +1,124 @@
+---
+/**
+ * /admin — dashboard
+ *
+ * Five counts and two buttons.
+ *
+ * Every number is a COUNT against the database, taken at the moment the page
+ * is rendered. There is no cached figure, no derived metric and nothing that
+ * would still print a number if the query failed — a failed read says so and
+ * shows nothing rather than showing a zero that looks like an answer.
+ */
+
+export const prerender = false;
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import Note from '../../components/admin/Note.astro';
+import { dashboardCounts } from '../../lib/admin/queries.js';
+import { messageFor, isErrorCode } from '../../lib/admin/forms.js';
+
+const supabase = Astro.locals.supabase;
+
+const { counts, error } = await dashboardCounts(supabase);
+
+/* The five most recently touched works, as a way back into whatever was being
+   edited last. Ordered by updated_at, which the trigger keeps current. */
+const { data: recent } = await supabase
+  .from('artworks')
+  .select('id, title, slug, is_published, updated_at')
+  .order('updated_at', { ascending: false })
+  .limit(5);
+
+const code = Astro.url.searchParams.get('m') ?? '';
+const message = messageFor(code);
+
+const cards = [
+  { label: 'Artworks', value: counts.artworks },
+  { label: 'Published', value: counts.published },
+  { label: 'Featured', value: counts.featured },
+  { label: 'Exhibitions', value: counts.exhibitions },
+  { label: 'Media files', value: counts.media },
+];
+
+const dateFormat = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
+---
+
+<AdminLayout title="Dashboard" lead="What is currently in the database.">
+  <Fragment slot="actions">
+    <a class="btn" href="/admin/works/new">+ Add work</a>
+    <a class="btn btn--quiet" href="/admin/exhibitions/new">+ Add exhibition</a>
+  </Fragment>
+
+  {message && <Note tone={isErrorCode(code) ? 'error' : 'ok'} text={message} />}
+
+  {
+    error ? (
+      <Note
+        tone="error"
+        text={`The counts could not be read: ${error.message}. Nothing is shown rather than zeros, which would look like an empty database.`}
+      />
+    ) : (
+      <div class="stats">
+        {cards.map((card) => (
+          <div class="stat">
+            <span class="stat__n">{card.value}</span>
+            <span class="stat__label">{card.label}</span>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  {
+    !error && counts.artworks === 0 && (
+      <Note tone="warn">
+        <p>
+          <b>The archive is empty.</b> The public site is still rendering from
+          <code> src/data/artworks.js</code>, which holds twelve placeholder
+          entries and no photography. It will switch to this database for any
+          work added here and published.
+        </p>
+      </Note>
+    )
+  }
+
+  <div class="panel">
+    <p class="panel__title">Recently edited</p>
+
+    {
+      recent && recent.length > 0 ? (
+        <div class="tablewrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">Title</th>
+                <th scope="col">Status</th>
+                <th scope="col">Last saved</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recent.map((item) => (
+                <tr>
+                  <td>
+                    <a class="table__title" href={`/admin/works/${item.id}`}>
+                      {item.title || <em>Untitled</em>}
+                    </a>
+                    <span class="table__sub">{item.slug}</span>
+                  </td>
+                  <td>
+                    <span class:list={['flag', item.is_published && 'flag--on']}>
+                      {item.is_published ? 'Published' : 'Draft'}
+                    </span>
+                  </td>
+                  <td>{dateFormat.format(new Date(item.updated_at))}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p class="empty">Nothing has been added yet.</p>
+      )
+    }
+  </div>
+</AdminLayout>

@@ -1,0 +1,122 @@
+---
+/**
+ * ARTWORK FORM
+ *
+ * The whole artwork record, shared by the create and edit routes so there is
+ * one place a field is added and one place it can be forgotten.
+ *
+ * enctype is multipart because of the file input. Without it the browser posts
+ * the filename as a string and the server receives no file at all — a silent
+ * failure that looks like a bug in the upload code.
+ */
+
+import Field from './Field.astro';
+import Toggle from './Toggle.astro';
+import ImageField from './ImageField.astro';
+
+const {
+  /**
+   * The row being edited, or null when creating.
+   *
+   * On a failed create this also carries the rejected submission so the fields
+   * come back filled — which is why `isNew` is its own prop rather than being
+   * inferred from this one being null.
+   */
+  artwork = null,
+  isNew = !artwork,
+  categories = [],
+  action,
+  submitLabel = 'Save',
+} = Astro.props;
+
+const categoryOptions = [
+  { value: '', label: '— No category —' },
+  ...categories.map((c) => ({ value: c.id, label: c.label })),
+];
+
+/* `year` is the smallint the timeline sorts on; `year_display` is what gets
+   printed when a single number will not do. Both exist because "2014–2015"
+   cannot be sorted and 2014 cannot be displayed for a work that spans two. */
+const value = (key, fallback = '') => artwork?.[key] ?? fallback;
+---
+
+<form class="form" method="POST" action={action} enctype="multipart/form-data">
+  <div class="panel">
+    <p class="panel__title">The work</p>
+
+    <div class="form__grid">
+      <Field name="title" label="Title" value={value('title')} wide
+        hint="Left empty, the site prints a numbered placeholder rather than inventing one." />
+
+      <Field name="year" label="Year" type="number" value={value('year')}
+        min="1800" max="2200" step="1" inputmode="numeric"
+        hint="A single year. Used for sorting." />
+
+      <Field name="year_display" label="Year, as shown" value={value('year_display')}
+        hint="Only for a work that spans time, e.g. 2014–2015. Otherwise leave empty." />
+
+      <Field name="category_id" label="Category" type="select"
+        value={value('category_id')} options={categoryOptions} />
+
+      {/* No placeholder on either of these. "Oil on canvas" and "180 × 140 cm"
+          read as data rather than as a hint, and on a form whose whole rule is
+          that nothing gets invented, an empty box should look empty. Left
+          blank, the work's page prints an em dash. */}
+      <Field name="medium" label="Medium" value={value('medium')}
+        hint="Leave empty if it has not been recorded." />
+
+      <Field name="dimensions" label="Dimensions" value={value('dimensions')}
+        hint="Leave empty if it has not been measured." />
+
+      <Field name="aspect_ratio" label="Aspect ratio" value={value('aspect_ratio', '3 / 4')}
+        placeholder="3 / 4"
+        hint="The true proportions of the photograph. This reserves the space before it loads, which is what stops the page jumping." />
+
+      <Field name="description" label="Description" type="textarea"
+        value={value('description')} wide
+        hint="A short curatorial note. Shown on the work's own page." />
+    </div>
+  </div>
+
+  <div class="panel">
+    <p class="panel__title">Photograph</p>
+
+    <ImageField
+      media={artwork?.media ?? null}
+      bucket="artworks"
+      label="Photograph"
+      allowRemove={!isNew}
+    />
+  </div>
+
+  <div class="panel">
+    <p class="panel__title">Placement</p>
+
+    <div class="form__grid">
+      <Field name="slug" label="Slug" value={value('slug')}
+        hint={isNew
+          ? 'The URL for this work. Left empty, it is made from the title.'
+          : 'Changing this changes the public URL and breaks any existing link to it.'} />
+
+      <Field name="sort_order" label="Sort order" type="number"
+        value={value('sort_order', 0)} step="1" inputmode="numeric"
+        hint="Lower numbers come first. Equal numbers fall back to newest first." />
+    </div>
+
+    <div class="stack" style="gap:0; margin-top:0.5rem;">
+      <Toggle name="is_published" label="Published" checked={Boolean(value('is_published', false))}
+        hint="Unpublished works are invisible to the public site. Nothing else hides them." />
+
+      <Toggle name="is_selected" label="Selected work" checked={Boolean(value('is_selected', false))}
+        hint="Appears in the Selected Works shortlist and on the homepage." />
+
+      <Toggle name="is_featured" label="Featured" checked={Boolean(value('is_featured', false))}
+        hint="May occupy a large slot in the works grid." />
+    </div>
+  </div>
+
+  <div class="form__foot">
+    <button type="submit" class="btn">{submitLabel}</button>
+    <a class="btn btn--quiet" href="/admin/works">Cancel</a>
+  </div>
+</form>

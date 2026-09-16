@@ -1,0 +1,38 @@
+---
+import PageHeader from '../components/PageHeader.astro';
+import { useTranslations } from '../i18n/utils.js';
+
+/**
+ * Privacy and Terms share this shell. No legal text is invented here —
+ * the page states plainly that the copy is still to be written, and the
+ * structure is ready for it.
+ */
+const { lang = 'en', title } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<PageHeader title={title} />
+
+<section class="section--tight">
+  <div class="shell legal">
+    <p class="legal__pending">{t('legal.pending')}</p>
+    <p class="body legal__note">{t('legal.note')}</p>
+  </div>
+</section>
+
+<style>
+  .legal {
+    max-width: 58ch;
+  }
+
+  .legal__pending {
+    padding: 1.15rem 0;
+    border-top: 1px solid var(--accent);
+    font-size: var(--fs-lead);
+    line-height: 1.5;
+  }
+
+  .legal__note {
+    margin-top: 1.5rem;
+  }
+</style>

@@ -1,0 +1,210 @@
+---
+import ArtworkCard from './ArtworkCard.astro';
+import { artworkIndex } from '../data/content.js';
+
+/**
+ * The works grid — a hung wall, not a listing.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY SIX COLUMNS AND NOT THREE
+ * ---------------------------------------------------------------------------
+ * The earlier version was three equal columns. It kept each artwork's own
+ * aspect ratio and staggered the rows, which stopped it looking like a product
+ * listing — but every work was the same width, so nothing could be more
+ * important than anything else. A wall where all thirty pictures are hung at
+ * the same scale is a warehouse.
+ *
+ * Six columns give a unit small enough to build unequal widths from. Each cell
+ * spans two, three or four of them on a seven-work cycle, so a sequence reads
+ * dominant, dominant, supporting, supporting, supporting, wide, supporting,
+ * and then begins again out of phase with itself. Rows still sum to six, so
+ * the wall stays ordered; the scale is what varies.
+ *
+ * Nothing is placed at an explicit column. That is deliberate and load-bearing:
+ * the category filter hides cells with `display: none`, and with only spans to
+ * satisfy the remaining works simply reflow. Explicit column-start lines would
+ * tear holes in the wall the moment someone clicked ABSTRACT.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY THE CYCLE ALONE WAS NOT ENOUGH
+ * ---------------------------------------------------------------------------
+ * Assigning spans purely by position ignores which way the picture faces, and
+ * once the real aspect ratios arrived that showed immediately: a work at 0.434
+ * given three columns rendered 1479px tall, while a 1.839 landscape in two
+ * columns came out 228px. Six and a half times the height, on the same wall.
+ * The column rhythm was varied and the result still read badly, because on a
+ * wall it is height that the eye compares, not column count.
+ *
+ * So orientation is measured here and handed to CSS as an attribute. The cycle
+ * still decides the base size — that is what keeps the sequence from looking
+ * automatic — and orientation then holds a tall work back from the widest
+ * slots. Position proposes, the picture vetoes.
+ */
+
+const { items = [], lang = 'en' } = Astro.props;
+
+/**
+ * Which way a work faces, from the ratio content.js derived for it.
+ *
+ * The thresholds are deliberately wide. Anything near square behaves like a
+ * landscape here, because a 1:1 work in a wide slot is still a reasonable
+ * height — it is only the genuinely tall ones that need restraining.
+ */
+function orientation(ratio) {
+  const [w, h] = String(ratio ?? '').split('/').map((n) => parseFloat(n));
+  if (!Number.isFinite(w) || !Number.isFinite(h) || h === 0) return 'landscape';
+  return w / h < 0.8 ? 'portrait' : 'landscape';
+}
+---
+
+<div class="works-grid" data-grid>
+  {
+    items.map((artwork, i) => (
+      <div class="works-grid__cell reveal" data-category={artwork.category} data-selected={artwork.selected ? 'true' : 'false'} data-orient={orientation(artwork.ratio)} data-delay={String((i % 3) + 1)}>
+        <ArtworkCard artwork={artwork} index={artworkIndex(artwork.id)} lang={lang} />
+      </div>
+    ))
+  }
+</div>
+
+<style>
+  .works-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    column-gap: var(--gap);
+    /* Deeper than the column gap. On a wall the horizontal distance is set by
+       the frames; the vertical distance is what separates one hang from the
+       next, and it should be the larger of the two. */
+    row-gap: clamp(3rem, 6vw, 6rem);
+    align-items: start;
+  }
+
+  /* The supporting scale, and the default. */
+  .works-grid__cell {
+    grid-column: span 2;
+  }
+
+  /* Two dominant works open each cycle, filling a row between them. */
+  .works-grid__cell:nth-child(7n + 1),
+  .works-grid__cell:nth-child(7n + 2) {
+    grid-column: span 3;
+  }
+
+  /* One wide work per cycle, paired with a supporting one. */
+  .works-grid__cell:nth-child(7n + 6) {
+    grid-column: span 4;
+  }
+
+  /* ----------------------------------------------------- the picture's veto */
+
+  /* A tall work never takes a wide slot. Three columns at 0.434 is a metre and
+     a half of painting on a laptop screen; two columns brings the same work
+     back to something a person can see at once. Declared after the cycle so it
+     wins on source order. */
+  .works-grid__cell[data-orient='portrait'] {
+    grid-column: span 2;
+  }
+
+  /* And then it sits narrower than its own column. The frame keeps the real
+     ratio — nothing is cropped and nothing is stretched — but the work is
+     given air beside it instead of filling the measure, which is how a tall
+     canvas is hung next to a wide one. :global because the card belongs to
+     ArtworkCard; the selector stays anchored to this grid's own cell, so it
+     reaches nothing else.
+
+     At 1440 this takes the tallest work from 1479px to roughly 750, against a
+     wide work's 350–500. Around two to one rather than six and a half. */
+  .works-grid__cell[data-orient='portrait'] :global(.card) {
+    max-width: 78%;
+  }
+
+  /* The stagger now only lifts the smaller works, so they sit against the
+     large ones rather than alongside them. Applied to two of the three
+     supporting positions — offsetting all of them would read as a diagonal. */
+  .works-grid__cell:nth-child(7n + 4) {
+    margin-top: clamp(1.5rem, 5vw, 4.5rem);
+  }
+
+  .works-grid__cell:nth-child(7n + 7) {
+    margin-top: clamp(1rem, 3vw, 2.5rem);
+  }
+
+  .works-grid__cell[hidden] {
+    display: none;
+  }
+
+  @media (max-width: 1000px) {
+    /* Four columns: the same idea at half the resolution. Two works to a row,
+       except the wide one, which takes the full width and becomes the pause
+       in the sequence. */
+    .works-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .works-grid__cell,
+    .works-grid__cell:nth-child(7n + 1),
+    .works-grid__cell:nth-child(7n + 2) {
+      grid-column: span 2;
+    }
+
+    .works-grid__cell:nth-child(7n + 6) {
+      grid-column: span 4;
+    }
+
+    /* Repeated inside the query on purpose. The rule above has the same
+       specificity and comes later in the source, so without this a tall work
+       landing on the wide slot would take the full four columns here — the one
+       case the veto exists to prevent. */
+    .works-grid__cell[data-orient='portrait'] {
+      grid-column: span 2;
+    }
+
+    .works-grid__cell:nth-child(7n + 4),
+    .works-grid__cell:nth-child(7n + 7) {
+      margin-top: 0;
+    }
+
+    .works-grid__cell:nth-child(2n) {
+      margin-top: clamp(1.5rem, 7vw, 4rem);
+    }
+  }
+
+  @media (max-width: 620px) {
+    .works-grid {
+      grid-template-columns: minmax(0, 1fr);
+      row-gap: clamp(2.5rem, 9vw, 3.5rem);
+    }
+
+    /* Every span must be reset. A cell still asking for `span 4` in a
+       one-column grid does not clamp — it creates three implicit columns and
+       pushes the page sideways. This one declaration is the difference
+       between a phone layout and horizontal overflow. */
+    .works-grid__cell:nth-child(n) {
+      grid-column: span 1;
+    }
+
+    /* on one column the offsets stop meaning anything — drop them and let
+       the varied aspect ratios carry the rhythm instead */
+    .works-grid__cell:nth-child(n) {
+      margin-top: 0;
+    }
+
+    /* The veto is a wall rule: it exists so a tall work does not tower over
+       what is hung beside it. In one column nothing is beside anything, and
+       holding a portrait to 78% here would only make it small for no reason.
+       The inset rules below carry the rhythm instead. */
+    .works-grid__cell[data-orient='portrait'] :global(.card) {
+      max-width: none;
+    }
+
+    /* keep a deliberate hierarchy on mobile: every fourth work is inset,
+       so the column does not read as an undifferentiated stack */
+    .works-grid__cell:nth-child(4n + 3) {
+      padding-right: 18%;
+    }
+
+    .works-grid__cell:nth-child(4n) {
+      padding-left: 18%;
+    }
+  }
+</style>

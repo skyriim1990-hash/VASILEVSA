@@ -1,0 +1,84 @@
+---
+/**
+ * /admin/no-access
+ *
+ * Signed in, verified, and not on the allowlist.
+ *
+ * This is a state worth having a page for. The alternative is an admin panel
+ * that loads, shows five zeros and four empty tables, and gives no hint that
+ * the data exists and the account simply is not allowed to see it. Somebody
+ * would conclude the migration failed and run it again.
+ *
+ * The SQL below is the whole fix, with the signed-in address already in it.
+ */
+
+export const prerender = false;
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import Note from '../../components/admin/Note.astro';
+import { adminLabel } from '../../lib/admin/auth.js';
+
+const user = Astro.locals.user ?? null;
+
+/* Nobody is signed in — there is nothing to deny. Send them to sign in. */
+if (!user) return Astro.redirect('/admin/login', 302);
+
+/* Reaching this page while already an admin means arriving by typing the URL.
+   Not an error state; just send them to the dashboard. */
+if (Astro.locals.isAdmin) return Astro.redirect('/admin', 302);
+
+const email = adminLabel(user);
+
+const sql = `insert into public.admin_users (user_id, email)
+select id, email from auth.users
+where email = '${email.replace(/'/g, "''")}'
+on conflict (user_id) do nothing;`;
+
+Astro.response.status = 403;
+---
+
+<AdminLayout title="Not an administrator" chrome={false}>
+  <div class="login">
+    <div class="login__box" style="max-width: 560px;">
+      <h1 class="login__brand">
+        Vasilevsa<span>.</span>
+        <small>Administration</small>
+      </h1>
+
+      <Note tone="warn" text={`Signed in as ${email}, but this account is not on the administrator allowlist.`} />
+
+      <div class="panel">
+        <p class="panel__title">To grant access</p>
+        <p style="margin:0 0 0.75rem; font-size:0.8125rem;">
+          Run this in the Supabase dashboard, under <b>SQL Editor</b>. It adds
+          the account you are signed in as.
+        </p>
+        <pre class="no-access__sql"><code>{sql}</code></pre>
+        <p style="margin:0.75rem 0 0; font-size:0.75rem; color:var(--ink-faint);">
+          Then reload this page. Nothing about the public site is affected
+          either way.
+        </p>
+      </div>
+
+      <form method="POST" action="/admin/logout">
+        <button type="submit" class="btn btn--quiet">Sign out</button>
+      </form>
+
+      <a class="login__back" href="/">← Back to the site</a>
+    </div>
+  </div>
+</AdminLayout>
+
+<style>
+  .no-access__sql {
+    margin: 0;
+    padding: 0.85rem;
+    overflow-x: auto;
+    background: var(--paper-deep);
+    border: 1px solid var(--rule);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.75rem;
+    line-height: 1.55;
+    white-space: pre;
+  }
+</style>

@@ -1,0 +1,11 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ContactView from '../views/ContactView.astro';
+import { useTranslations } from '../i18n/utils.js';
+
+const t = useTranslations('en');
+---
+
+<BaseLayout lang="en" title={t('nav.contact')} description={t('contact.lead')}>
+  <ContactView lang="en" />
+</BaseLayout>

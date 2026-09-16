@@ -1,0 +1,11 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import LegalView from '../views/LegalView.astro';
+import { useTranslations } from '../i18n/utils.js';
+
+const t = useTranslations('en');
+---
+
+<BaseLayout lang="en" title={t('legal.privacy')} description={t('legal.pending')}>
+  <LegalView lang="en" title={t('legal.privacy')} />
+</BaseLayout>

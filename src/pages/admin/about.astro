@@ -1,0 +1,75 @@
+---
+/**
+ * /admin/about
+ *
+ * The About page as editable blocks. page_key = 'about'.
+ *
+ * Portraits go to the `portraits` bucket, which is what the site's Portrait
+ * convention already expects — see the README section of the same name.
+ *
+ * No biography is seeded here.
+ *
+ * ---------------------------------------------------------------------------
+ * THESE SECTIONS DO NOT REACH THE PUBLIC PAGE YET
+ * ---------------------------------------------------------------------------
+ * src/views/AboutView.astro renders from src/i18n/ui.js and reads nothing from
+ * content_sections. Publishing a section here changes the database and not the
+ * site, so the page says so rather than letting someone write a biography into
+ * a box that goes nowhere.
+ *
+ * Wiring it is not difficult — a heading and a body map onto the existing
+ * `.chunk` block one for one, with the same fallback the artwork grid already
+ * uses. It is left undone deliberately: which parts of the page become
+ * editable is a decision about the page, not a bug to fix quietly.
+ */
+
+export const prerender = false;
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import SectionsEditor from '../../components/admin/SectionsEditor.astro';
+import Note from '../../components/admin/Note.astro';
+import { listSections } from '../../lib/admin/queries.js';
+import { handleSectionPost } from '../../lib/admin/sectionForm.js';
+import { messageFor, isErrorCode } from '../../lib/admin/forms.js';
+
+const PAGE_KEY = 'about';
+
+let errors = [];
+
+if (Astro.request.method === 'POST') {
+  const result = await handleSectionPost(Astro, PAGE_KEY);
+  if (result instanceof Response) return result;
+  errors = result;
+}
+
+const { data: sections, error } = await listSections(Astro.locals.supabase, PAGE_KEY);
+
+const code = Astro.url.searchParams.get('m') ?? '';
+const message = messageFor(code);
+---
+
+<AdminLayout
+  title="About"
+  lead="The editorial blocks behind the About page, in the order they appear."
+>
+  <Fragment slot="actions">
+    <a class="btn btn--quiet" href="/about" target="_blank" rel="noopener">View page ↗</a>
+  </Fragment>
+
+  <Note
+    tone="warn"
+    text="Sections saved here are stored but not yet shown on the public About page — that page still renders its text from src/i18n/ui.js. Write here to draft the content; changing the public page is a separate step."
+  />
+
+  {message && <Note tone={isErrorCode(code) ? 'error' : 'ok'} text={message} />}
+  {errors.length > 0 && <Note tone="error" text="Not saved:" items={errors} />}
+  {error && <Note tone="error" text={`Could not read the sections: ${error.message}`} />}
+
+  <SectionsEditor
+    sections={sections ?? []}
+    action="/admin/about"
+    bucket="portraits"
+    imageLabel="Portrait"
+    imageHint="Stored in the portraits bucket. Up to 20 MB."
+  />
+</AdminLayout>

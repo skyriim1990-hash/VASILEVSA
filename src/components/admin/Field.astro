@@ -1,0 +1,90 @@
+---
+/**
+ * FIELD
+ *
+ * A label, a control and an optional hint, wired together.
+ *
+ * The label's `for` and the control's `id` are derived from one `name` prop
+ * rather than written twice at each call site. Half the accessibility bugs in
+ * an admin form are a label pointing at an id that was renamed — this makes
+ * that impossible by construction.
+ *
+ * `type` picks the control. `select` renders its options from `options`;
+ * anything else is an input, except `textarea`.
+ */
+
+const {
+  name,
+  label,
+  /**
+   * Namespaces the generated id. Needed wherever more than one form sits on a
+   * page — the section editors put a form per section, and two controls
+   * sharing an id means one of the labels points at the wrong box.
+   */
+  idPrefix = 'f',
+  type = 'text',
+  value = '',
+  hint = '',
+  required = false,
+  placeholder = '',
+  options = [],
+  rows = 5,
+  wide = false,
+  min,
+  max,
+  step,
+  autocomplete,
+  inputmode,
+  disabled = false,
+} = Astro.props;
+
+const id = `${idPrefix}-${name}`;
+const hintId = hint ? `${id}-hint` : undefined;
+
+/* Both are passed straight through to the control: `required` so the browser
+   blocks the submit, `aria-required` for readers that do not map one to the
+   other. */
+const shared = {
+  id,
+  name,
+  required: required || undefined,
+  'aria-required': required ? 'true' : undefined,
+  'aria-describedby': hintId,
+  disabled: disabled || undefined,
+};
+---
+
+<div class:list={['field', wide && 'field--wide']}>
+  <label class="field__label" for={id}>
+    {label}
+    {required && <span class="field__req" aria-hidden="true"> *</span>}
+  </label>
+
+  {
+    type === 'textarea' ? (
+      <textarea {...shared} rows={rows} placeholder={placeholder}>{value}</textarea>
+    ) : type === 'select' ? (
+      <select {...shared}>
+        {options.map((opt) => (
+          <option value={opt.value} selected={String(opt.value) === String(value)}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    ) : (
+      <input
+        {...shared}
+        type={type}
+        value={value}
+        placeholder={placeholder}
+        min={min}
+        max={max}
+        step={step}
+        autocomplete={autocomplete}
+        inputmode={inputmode}
+      />
+    )
+  }
+
+  {hint && <p class="field__hint" id={hintId}>{hint}</p>}
+</div>

@@ -1,0 +1,103 @@
+---
+/**
+ * /admin/exhibitions/[id]
+ *
+ * Edit and delete, told apart by the hidden `_action` field — the same
+ * arrangement as /admin/works/[id], for the same reason: one place that loads
+ * the record, checks it exists and decides what happens to it.
+ */
+
+export const prerender = false;
+
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import ExhibitionForm from '../../../components/admin/ExhibitionForm.astro';
+import Note from '../../../components/admin/Note.astro';
+import ConfirmAction from '../../../components/admin/ConfirmAction.astro';
+import { getExhibition, deleteExhibition } from '../../../lib/admin/queries.js';
+import { saveExhibition, readExhibitionForm } from '../../../lib/admin/exhibitionForm.js';
+import { describeWriteError } from '../../../lib/admin/artworkForm.js';
+import { removeMedia } from '../../../lib/admin/media.js';
+import { redirectWith, messageFor, isErrorCode, isUuid, str } from '../../../lib/admin/forms.js';
+
+const supabase = Astro.locals.supabase;
+const { id } = Astro.params;
+
+if (!isUuid(id)) {
+  return redirectWith(Astro, '/admin/exhibitions', { m: 'not-found' });
+}
+
+let errors = [];
+let { data: exhibition } = await getExhibition(supabase, id);
+
+if (!exhibition) {
+  return redirectWith(Astro, '/admin/exhibitions', { m: 'not-found' });
+}
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const action = str(form, '_action');
+
+  if (action === 'delete') {
+    if (exhibition.media_id) {
+      await removeMedia(supabase, exhibition.media_id);
+    }
+
+    const { error } = await deleteExhibition(supabase, exhibition.id);
+
+    if (error) {
+      errors = [describeWriteError(error, 'exhibition')];
+    } else {
+      return redirectWith(Astro, '/admin/exhibitions', { m: 'deleted' });
+    }
+  } else {
+    const result = await saveExhibition(supabase, form, exhibition);
+
+    if (result.ok) {
+      return redirectWith(Astro, `/admin/exhibitions/${exhibition.id}`, { m: 'saved' });
+    }
+
+    errors = result.errors;
+
+    /* Same as /admin/works/[id]: re-read so the image reflects reality, then
+       lay the submitted values back over it so a rejected save does not throw
+       away everything else that was typed. */
+    const { data: fresh } = await getExhibition(supabase, id);
+
+    if (!fresh) return redirectWith(Astro, '/admin/exhibitions', { m: 'not-found' });
+
+    exhibition = { ...fresh, ...readExhibitionForm(form, fresh).values };
+  }
+}
+
+const code = Astro.url.searchParams.get('m') ?? '';
+const message = messageFor(code);
+
+const heading = exhibition.title || exhibition.venue || 'Untitled entry';
+---
+
+<AdminLayout title={heading} lead={[exhibition.year, exhibition.city].filter(Boolean).join(' · ')}>
+  <Fragment slot="actions">
+    <ConfirmAction
+      action={`/admin/exhibitions/${exhibition.id}`}
+      label="Delete entry"
+      question={`Delete “${heading}”? This cannot be undone.`}
+      fields={{ _action: 'delete' }}
+    />
+  </Fragment>
+
+  {message && <Note tone={isErrorCode(code) ? 'error' : 'ok'} text={message} />}
+  {errors.length > 0 && <Note tone="error" text="Not saved:" items={errors} />}
+
+  {
+    !exhibition.is_published && (
+      <Note tone="warn" text="This entry is a draft and does not appear on the public timeline." />
+    )
+  }
+
+  <ExhibitionForm
+    exhibition={exhibition}
+    isNew={false}
+    action={`/admin/exhibitions/${exhibition.id}`}
+    submitLabel="Save changes"
+  />
+</AdminLayout>

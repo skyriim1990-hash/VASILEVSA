@@ -1,0 +1,47 @@
+---
+/**
+ * THUMB
+ *
+ * The small image in a list row, or a marked empty box when there is none.
+ *
+ * ---------------------------------------------------------------------------
+ * A NOTE ON SIZE
+ * ---------------------------------------------------------------------------
+ * This renders the original file at 46×58 CSS pixels. Supabase Storage has no
+ * resizing on the free tier, and adding a transform service for the sake of a
+ * list nobody but the artist sees would be the wrong trade — but it does mean
+ * a page of 25 rows fetches 25 full-size photographs.
+ *
+ * What keeps that from being painful: `loading="lazy"` so only the rows on
+ * screen fetch anything, and a one-hour cache header set at upload so the
+ * second visit fetches none of them. If the archive grows past a few hundred
+ * works and this becomes slow, the fix is an image transform in front of the
+ * bucket, not a change to this component.
+ *
+ * alt="" is correct here and not an oversight: the thumbnail sits beside the
+ * title it illustrates, and announcing both would read the row twice.
+ */
+
+import { publicUrl } from '../../lib/supabase/storage.js';
+
+const { media = null, ratio = '46 / 58' } = Astro.props;
+
+const src = media ? publicUrl(media.bucket, media.path) : '';
+---
+
+{
+  src ? (
+    <img
+      class="table__thumb"
+      src={src}
+      alt=""
+      loading="lazy"
+      decoding="async"
+      style={`aspect-ratio: ${ratio};`}
+    />
+  ) : (
+    <span class="table__thumb table__thumb--empty" aria-hidden="true" style={`aspect-ratio: ${ratio};`}>
+      —
+    </span>
+  )
+}

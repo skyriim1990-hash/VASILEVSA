@@ -1,0 +1,157 @@
+---
+/**
+ * /admin/works/[id]
+ *
+ * Edit and delete. Both are POSTs to this URL, told apart by a hidden
+ * `_action` field.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY DELETE LIVES HERE AND NOT ON ITS OWN ENDPOINT
+ * ---------------------------------------------------------------------------
+ * The list page's delete button also posts here, with `_return=list` so it
+ * goes back where it came from. One route owning both operations means the
+ * record is loaded and checked once, in one place — a separate delete endpoint
+ * would have to repeat the lookup, the ownership check and the not-found
+ * handling, which is three chances for the two to disagree.
+ *
+ * There is no DELETE method and no fetch(). A plain form posts from a table
+ * row with no JavaScript at all, and the confirmation step is a <details>
+ * rather than a dialog for the same reason.
+ */
+
+export const prerender = false;
+
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import ArtworkForm from '../../../components/admin/ArtworkForm.astro';
+import Note from '../../../components/admin/Note.astro';
+import ConfirmAction from '../../../components/admin/ConfirmAction.astro';
+import { getArtwork, listCategories, deleteArtwork } from '../../../lib/admin/queries.js';
+import { saveArtwork, readArtworkForm, describeWriteError } from '../../../lib/admin/artworkForm.js';
+import { removeMedia } from '../../../lib/admin/media.js';
+import { publicUrl } from '../../../lib/supabase/storage.js';
+import { redirectWith, messageFor, isErrorCode, isUuid, str } from '../../../lib/admin/forms.js';
+
+const supabase = Astro.locals.supabase;
+const { id } = Astro.params;
+
+/* A malformed id is rejected before it reaches Postgres. Sending "abc" where a
+   uuid is expected raises 22P02, which surfaces as a 500 rather than the 404
+   this actually is. */
+if (!isUuid(id)) {
+  return redirectWith(Astro, '/admin/works', { m: 'not-found' });
+}
+
+let errors = [];
+
+/* Read first, for both methods. A POST for a record that no longer exists —
+   two tabs open, deleted in one — must not be allowed to resurrect it. */
+let { data: artwork } = await getArtwork(supabase, id);
+
+if (!artwork) {
+  return redirectWith(Astro, '/admin/works', { m: 'not-found' });
+}
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const action = str(form, '_action');
+
+  if (action === 'delete') {
+    const backToList = str(form, '_return') === 'list';
+
+    /* The photograph goes first. Doing it after the row would mean the only
+       pointer to the file is gone, and an interrupted request would leave the
+       bytes in the bucket with nothing left to find them by. Not forced: if
+       another work shares this photograph the file stays and only the
+       reference is dropped. */
+    if (artwork.media_id) {
+      await removeMedia(supabase, artwork.media_id);
+    }
+
+    const { error } = await deleteArtwork(supabase, artwork.id);
+
+    if (error) {
+      errors = [describeWriteError(error, 'artwork')];
+    } else {
+      return redirectWith(Astro, '/admin/works', { m: 'deleted' });
+    }
+  } else {
+    const result = await saveArtwork(supabase, form, artwork);
+
+    if (result.ok) {
+      return redirectWith(Astro, `/admin/works/${artwork.id}`, { m: 'saved' });
+    }
+
+    errors = result.errors;
+
+    /* Re-read so the image half shows what actually happened: an upload can
+       succeed before a later validation fails, and rendering the stale row
+       would show the old photograph beside an error about the year. */
+    const { data: fresh } = await getArtwork(supabase, id);
+
+    /* Deleted in another tab between the POST and this read. Without the
+       check, every `artwork.` below throws and the editor gets a 500 instead
+       of the same "not found" they would get anywhere else. */
+    if (!fresh) return redirectWith(Astro, '/admin/works', { m: 'not-found' });
+
+    /* The typed values are laid back over the stored row. Re-reading alone
+       would discard every edit in the submission — a mistyped year would cost
+       the editor the title and description they just wrote. /admin/works/new
+       already keeps a rejected submission; this is the same promise on the
+       edit form, which is where most typing actually happens.
+
+       Order matters: `fresh` supplies id, media_id and the joined media row,
+       none of which readArtworkForm returns, so the image survives. */
+    artwork = { ...fresh, ...readArtworkForm(form, fresh).values };
+  }
+}
+
+const { data: categories } = await listCategories(supabase);
+
+const code = Astro.url.searchParams.get('m') ?? '';
+const message = messageFor(code);
+
+const heading = artwork.title || 'Untitled work';
+const imageUrl = artwork.media ? publicUrl(artwork.media.bucket, artwork.media.path) : '';
+---
+
+<AdminLayout title={heading} lead={artwork.slug}>
+  <Fragment slot="actions">
+    {artwork.is_published && (
+      <a class="btn btn--quiet" href={`/works/${artwork.slug}`} target="_blank" rel="noopener">
+        View on site ↗
+      </a>
+    )}
+    <ConfirmAction
+      action={`/admin/works/${artwork.id}`}
+      label="Delete work"
+      question={`Delete “${heading}”? The record and its photograph are removed. This cannot be undone.`}
+      fields={{ _action: 'delete' }}
+    />
+  </Fragment>
+
+  {message && <Note tone={isErrorCode(code) ? 'error' : 'ok'} text={message} />}
+  {errors.length > 0 && <Note tone="error" text="Not saved:" items={errors} />}
+
+  {
+    !artwork.is_published && (
+      <Note tone="warn" text="This work is a draft. It does not appear anywhere on the public site." />
+    )
+  }
+
+  {
+    imageUrl && !artwork.media.width && (
+      <Note
+        tone="warn"
+        text="The pixel dimensions of this photograph were not recorded, so the public page cannot reserve its exact space before it loads. Re-uploading it with JavaScript enabled fixes that."
+      />
+    )
+  }
+
+  <ArtworkForm
+    artwork={artwork}
+    isNew={false}
+    categories={categories ?? []}
+    action={`/admin/works/${artwork.id}`}
+    submitLabel="Save changes"
+  />
+</AdminLayout>

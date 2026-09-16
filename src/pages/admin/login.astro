@@ -1,0 +1,191 @@
+---
+/**
+ * /admin/login
+ *
+ * Email and password, posted to this same URL and handled above the markup.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY THE FORM POSTS HERE INSTEAD OF CALLING SUPABASE FROM THE BROWSER
+ * ---------------------------------------------------------------------------
+ * A browser-side sign-in puts the session in a cookie the page then has to
+ * reload to make the server aware of, and it does not work at all with
+ * JavaScript disabled. Signing in on the server means the Set-Cookie arrives
+ * on the redirect itself: one round trip, no flash of the wrong state, and a
+ * form that works in any browser.
+ *
+ * There is no registration here. Accounts are created in the Supabase
+ * dashboard by whoever owns the project.
+ *
+ * There is a password reset, reached from the link below the form. It was
+ * argued against when this page was written, on the grounds that a one-person
+ * panel gains an entry point and little else — the reasoning, and why it did
+ * not survive contact with how Supabase builds the email, is written out at
+ * the top of forgot-password.astro.
+ */
+
+export const prerender = false;
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import Field from '../../components/admin/Field.astro';
+import Note from '../../components/admin/Note.astro';
+import { createSupabaseServerClient } from '../../lib/supabase/server.js';
+import { str } from '../../lib/admin/forms.js';
+
+/**
+ * Only a path inside /admin is accepted, and only after the URL parser has
+ * seen it. Redirecting to a raw query parameter is how a login page becomes
+ * an open redirect: ?next=https://example.invalid/ would send someone who
+ * just typed their password to a site of the attacker's choosing.
+ */
+function safeNext(raw) {
+  if (!raw) return '/admin';
+
+  try {
+    const parsed = new URL(raw, Astro.url.origin);
+    if (parsed.origin !== Astro.url.origin) return '/admin';
+    if (!parsed.pathname.startsWith('/admin')) return '/admin';
+    if (parsed.pathname.startsWith('/admin/login')) return '/admin';
+    return parsed.pathname;
+  } catch {
+    return '/admin';
+  }
+}
+
+const configured = !Astro.locals.supabaseMissing;
+
+let error = '';
+let email = '';
+const next = safeNext(Astro.url.searchParams.get('next'));
+
+/* Set by reset-password.astro after it signs the account out everywhere. The
+   sign-in that follows is the confirmation that the new password works. */
+const justReset = Astro.url.searchParams.get('reset') === '1';
+
+/* Already signed in: nothing to do here. Sent on rather than shown a form
+   that would sign them in as themselves a second time. */
+if (Astro.request.method === 'GET' && Astro.locals.user) {
+  return Astro.redirect(next, 302);
+}
+
+if (Astro.request.method === 'POST') {
+  if (!configured) {
+    error = 'Supabase is not configured on this server.';
+  } else {
+    const form = await Astro.request.formData();
+    email = str(form, 'email');
+    const password = str(form, 'password');
+
+    if (!email || !password) {
+      error = 'Enter both an email address and a password.';
+    } else {
+      const supabase = createSupabaseServerClient(Astro);
+      const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+
+      if (authError) {
+        /* Supabase distinguishes "wrong password" from "no such user". This
+           page does not: telling a stranger which of the two it was tells them
+           whether the address is worth attacking. The one case worth naming is
+           an unconfirmed account, because it is the owner's own doing and has
+           a different fix. */
+        error = /email not confirmed/i.test(authError.message)
+          ? 'That account has not been confirmed yet. Confirm it in the Supabase dashboard under Authentication → Users.'
+          : 'Those details were not accepted. Check the address and password and try again.';
+      } else {
+        /* signInWithPassword wrote the session cookies through the adapter on
+           the server client, so the redirect already carries them. */
+        return Astro.redirect(next, 303);
+      }
+    }
+  }
+}
+---
+
+<AdminLayout title="Sign in" chrome={false}>
+  <div class="login">
+    <div class="login__box">
+      <h1 class="login__brand">
+        Vasilevsa<span>.</span>
+        <small>Administration</small>
+      </h1>
+
+      {!configured && (
+        <Note
+          tone="error"
+          text="Supabase credentials are missing from this server's environment. Fill PUBLIC_SUPABASE_URL and PUBLIC_SUPABASE_ANON_KEY in .env and restart."
+        />
+      )}
+
+      {justReset && (
+        <Note
+          tone="ok"
+          text="Your password has been changed and every other session on the account was ended. Sign in with the new one."
+        />
+      )}
+
+      {error && <Note tone="error" text={error} />}
+
+      <form class="login__form" method="POST" data-login>
+        <Field
+          name="email"
+          label="Email"
+          type="email"
+          value={email}
+          required
+          autocomplete="username"
+          inputmode="email"
+          disabled={!configured}
+        />
+
+        <Field
+          name="password"
+          label="Password"
+          type="password"
+          required
+          autocomplete="current-password"
+          disabled={!configured}
+        />
+
+        <button type="submit" class="btn" disabled={!configured || undefined} data-submit>
+          Sign in
+        </button>
+
+        <p class="login__aside">
+          <a href="/admin/forgot-password">Forgotten your password?</a>
+        </p>
+      </form>
+
+      <a class="login__back" href="/">← Back to the site</a>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  /* The only thing script adds here: a visible busy state, so a slow network
+     does not look like a dead button and get clicked four more times. The
+     form submits normally whether or not this runs. */
+  const form = document.querySelector('[data-login]');
+  const button = document.querySelector('[data-submit]');
+
+  if (form instanceof HTMLFormElement && button instanceof HTMLButtonElement) {
+    let sending = false;
+
+    form.addEventListener('submit', (event) => {
+      /* A form that fails its own validation never leaves the page, so the
+         busy state must not be set — the button would read "Signing in…"
+         forever while the browser points at an empty field. */
+      if (!form.checkValidity()) return;
+
+      if (sending) {
+        event.preventDefault();
+        return;
+      }
+
+      sending = true;
+      button.textContent = 'Signing in…';
+      /* aria-disabled rather than `disabled`: a disabled submit button is
+         excluded from the payload, and the guard above already stops the
+         second submit. */
+      button.setAttribute('aria-disabled', 'true');
+    });
+  }
+</script>

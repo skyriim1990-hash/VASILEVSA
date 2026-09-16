@@ -1,0 +1,78 @@
+---
+/**
+ * /admin/art-sport
+ *
+ * The Art × Sport page as editable blocks. page_key = 'art-sport'.
+ * Images go to the `artsport` bucket.
+ *
+ * ---------------------------------------------------------------------------
+ * NOTHING IS PRE-FILLED HERE, AND THAT IS THE POINT
+ * ---------------------------------------------------------------------------
+ * This is the page of the site most likely to be handed invented content —
+ * athlete names, competitions, dates, results, quotes. None of that has been
+ * supplied for this project, so none of it is seeded, suggested or used as
+ * placeholder text. The editor starts with an empty list.
+ *
+ * ---------------------------------------------------------------------------
+ * THESE SECTIONS DO NOT REACH THE PUBLIC PAGE YET
+ * ---------------------------------------------------------------------------
+ * src/views/ArtSportView.astro renders five chapters from src/i18n/ui.js and
+ * reads nothing from content_sections.
+ *
+ * Wiring this one is a larger job than About: a chapter carries an image
+ * ratio, a side to lean on and a column width, and content_sections has no
+ * columns for any of them. Making it editable means either adding them or
+ * dropping the alternating layout, and both are decisions about the page
+ * rather than repairs to it.
+ */
+
+export const prerender = false;
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import SectionsEditor from '../../components/admin/SectionsEditor.astro';
+import Note from '../../components/admin/Note.astro';
+import { listSections } from '../../lib/admin/queries.js';
+import { handleSectionPost } from '../../lib/admin/sectionForm.js';
+import { messageFor, isErrorCode } from '../../lib/admin/forms.js';
+
+const PAGE_KEY = 'art-sport';
+
+let errors = [];
+
+if (Astro.request.method === 'POST') {
+  const result = await handleSectionPost(Astro, PAGE_KEY);
+  if (result instanceof Response) return result;
+  errors = result;
+}
+
+const { data: sections, error } = await listSections(Astro.locals.supabase, PAGE_KEY);
+
+const code = Astro.url.searchParams.get('m') ?? '';
+const message = messageFor(code);
+---
+
+<AdminLayout
+  title="Art × Sport"
+  lead="The chapters of the Art × Sport page, in the order they appear."
+>
+  <Fragment slot="actions">
+    <a class="btn btn--quiet" href="/art-sport" target="_blank" rel="noopener">View page ↗</a>
+  </Fragment>
+
+  <Note
+    tone="warn"
+    text="Sections saved here are stored but not yet shown on the public Art × Sport page — that page still renders its five chapters from src/i18n/ui.js. Write here to draft the content; changing the public page is a separate step."
+  />
+
+  {message && <Note tone={isErrorCode(code) ? 'error' : 'ok'} text={message} />}
+  {errors.length > 0 && <Note tone="error" text="Not saved:" items={errors} />}
+  {error && <Note tone="error" text={`Could not read the sections: ${error.message}`} />}
+
+  <SectionsEditor
+    sections={sections ?? []}
+    action="/admin/art-sport"
+    bucket="artsport"
+    imageLabel="Image"
+    imageHint="Stored in the artsport bucket. Up to 20 MB."
+  />
+</AdminLayout>

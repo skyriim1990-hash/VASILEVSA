@@ -1,0 +1,118 @@
+---
+import PageHeader from '../components/PageHeader.astro';
+import ExhibitionItem from '../components/ExhibitionItem.astro';
+import { useTranslations } from '../i18n/utils.js';
+import { exhibitions, byYearDescending } from '../data/content.js';
+
+const { lang = 'en' } = Astro.props;
+const t = useTranslations(lang);
+
+/* Sorted here rather than in the data file, so entries can be added in any
+   order. Every entry comes from a published database record; there are no
+   placeholder rows left to keep in written order. */
+const entries = byYearDescending(exhibitions);
+---
+
+{/* The lead and the empty-state sentence say the same thing in almost the
+    same words, so only one of them is ever on screen. With entries, the lead
+    introduces the timeline as before. With none, it would sit directly above
+    a near-identical line and read as a mistake, so the empty state speaks for
+    the page alone. PageHeader drops the block entirely when lead is empty —
+    the index label and title are untouched either way. */}
+<PageHeader
+  label={t('common.index')}
+  title={t('ex.title')}
+  lead={entries.length > 0 ? t('ex.lead') : ''}
+/>
+
+<section class:list={['section--tight', entries.length === 0 && 'is-empty']}>
+  <div class="shell">
+    {
+      entries.length > 0 ? (
+        <div class="timeline">
+          {/* The column headings are hidden along with the table when there is
+              nothing to head. A row of labels over an empty list reads as a
+              page that failed to load its data. */}
+          <div class="timeline__head" aria-hidden="true">
+            <span class="micro">#</span>
+            <span class="micro">{t('detail.year')}</span>
+            <span class="micro">{t('ex.title')} / {t('ex.venue')}</span>
+            <span class="micro">{t('ex.location')}</span>
+            <span class="micro timeline__head-right">{t('ex.type')}</span>
+          </div>
+
+          <ol class="timeline__list">
+            {entries.map((item, i) => (
+              <li class="reveal" data-delay={String((i % 3) + 1)}>
+                <ExhibitionItem item={item} index={String(i + 1).padStart(2, '0')} lang={lang} />
+              </li>
+            ))}
+          </ol>
+        </div>
+      ) : (
+        /* Reuses the existing .notice rule — the accent hairline the page
+           already used for this message — so the empty state is the page's
+           own editorial furniture rather than a new component. */
+        <p class="notice reveal">{t('ex.empty')}</p>
+      )
+    }
+  </div>
+</section>
+
+<style>
+  /* --------------------------------------------------------- empty state */
+  /* .section--tight's top padding is sized to hold a page header apart from a
+     table. With no table under it the notice is no longer a block following
+     the introduction — it IS the introduction, and 154px of nothing above one
+     sentence reads as content that failed to load rather than as composition.
+
+     Dropping the padding to zero leaves the header's own bottom padding as the
+     entire distance: 64px on desktop, 40px on a phone. That is the measure the
+     lead paragraph uses when there are exhibitions to introduce, so the empty
+     page keeps the rhythm of the full one instead of inventing a new one.
+
+     The bottom padding is untouched. Air below a short page is deliberate;
+     air above an orphaned line is not. */
+  .section--tight.is-empty {
+    padding-top: 0;
+  }
+
+  .notice {
+    max-width: 62ch;
+    padding: 1.15rem 0;
+    border-top: 1px solid var(--accent);
+    font-size: var(--fs-small);
+    line-height: 1.65;
+    color: var(--ink-soft);
+  }
+
+  .timeline {
+    border-top: 1px solid var(--ink);
+  }
+
+  .timeline__head {
+    display: grid;
+    grid-template-columns: 3rem 7rem minmax(0, 2.2fr) minmax(0, 1.2fr) 7rem;
+    gap: var(--gap);
+    padding-block: 0.9rem;
+    border-bottom: 1px solid var(--rule);
+    color: var(--ink-faint);
+  }
+
+  .timeline__head-right {
+    text-align: right;
+  }
+
+  /* a chronological record is a list, and reads as one to a screen reader */
+  .timeline__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  @media (max-width: 900px) {
+    .timeline__head {
+      display: none;
+    }
+  }
+</style>

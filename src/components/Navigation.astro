@@ -1,0 +1,445 @@
+---
+import { useTranslations, path, ROUTES, isActive } from '../i18n/utils.js';
+
+const { lang = 'en' } = Astro.props;
+const t = useTranslations(lang);
+const pathname = Astro.url.pathname;
+
+const links = ROUTES.map((r) => ({
+  label: t(r.key),
+  href: path(r.to, lang),
+  active: isActive(pathname, path(r.to, lang)),
+}));
+---
+
+<header class="head">
+  <div class="head__inner shell">
+    <a class="brand" href={path('/', lang)} aria-label={`${t('site.name')} — ${t('nav.home')}`}>
+      <span class="brand__mark" aria-hidden="true">{t('site.shortName')}</span>
+      <span class="brand__name">
+        Alexandre Vassilev-Vasilevsa<span class="dot">.</span>
+      </span>
+    </a>
+
+    <nav class="nav" aria-label={t('nav.menu')}>
+      <ul class="nav__list">
+        {
+          links.map((l) => (
+            <li>
+              <a href={l.href} class:list={['nav__link', l.active && 'is-active']} aria-current={l.active ? 'page' : undefined}>
+                {l.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <button class="burger" type="button" aria-expanded="false" aria-controls="mobile-menu" data-menu-open>
+      <span class="burger__lines" aria-hidden="true"><span></span><span></span></span>
+      <span class="visually-hidden">{t('nav.open')}</span>
+    </button>
+  </div>
+</header>
+
+<!-- full-screen mobile menu -->
+<div class="sheet" id="mobile-menu" hidden>
+  <div class="sheet__bar shell">
+    <span class="brand__mark" aria-hidden="true">{t('site.shortName')}</span>
+    <button class="sheet__close" type="button" data-menu-close>
+      <span aria-hidden="true">{t('nav.close')}</span>
+      <span class="visually-hidden">{t('nav.close')}</span>
+    </button>
+  </div>
+
+  <nav class="sheet__nav shell" aria-label={t('nav.menu')}>
+    <ul>
+      {
+        links.map((l, i) => (
+          <li style={`--i: ${i}`}>
+            <a href={l.href} class:list={['sheet__link', l.active && 'is-active']} aria-current={l.active ? 'page' : undefined}>
+              <span class="sheet__num">{String(i + 1).padStart(2, '0')}</span>
+              <span>{l.label}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+
+  <div class="sheet__foot shell">
+    <p class="micro">{t('site.location')}</p>
+  </div>
+</div>
+
+<style>
+  /* ------------------------------------------------------------- header */
+
+  .head {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    /* Solid paper and a hairline, nothing else. This used to be 88% paper
+       over a saturating 10px blur — a frosted bar that smeared whatever
+       painting was passing under it and read as app chrome rather than as
+       the top of a gallery page. A blurred translucent header is the single
+       clearest "software product" signal a site can carry, and the artwork
+       is what should be moving here, not the furniture. */
+    background: var(--paper);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .head__inner {
+    display: flex;
+    align-items: center;
+    gap: var(--gap);
+    min-height: var(--header-h);
+  }
+
+  /* ------------------------------------------------------------- brand */
+
+  .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-right: auto;
+    min-width: 0;
+  }
+
+  .brand__mark {
+    font-family: var(--serif);
+    font-size: 1.35rem;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    flex: none;
+  }
+
+  .brand__name {
+    font-family: var(--sans);
+    font-size: var(--fs-micro);
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    white-space: nowrap;
+    transition: color 400ms var(--ease);
+  }
+
+  .brand:hover .brand__name {
+    color: var(--ink);
+  }
+
+  /* ------------------------------------------------------------- nav */
+
+  .nav__list {
+    display: flex;
+    align-items: center;
+    gap: clamp(1.25rem, 2.6vw, 2.75rem);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .nav__link {
+    position: relative;
+    display: block;
+    padding-block: 0.4rem;
+    font-size: var(--fs-micro);
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink);
+    white-space: nowrap;
+    transition: color 400ms var(--ease);
+  }
+
+  .nav__link::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: var(--accent-ink);
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 500ms var(--ease);
+  }
+
+  .nav__link:hover::after,
+  .nav__link:focus-visible::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+
+  /* the current page keeps the rule permanently, so the active item is not
+     signalled by colour alone (WCAG 1.4.1) */
+  .nav__link.is-active::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+
+  .nav__link:hover,
+  .nav__link.is-active {
+    color: var(--accent-ink);
+  }
+
+  /* ------------------------------------------------------------- burger */
+
+  .burger {
+    display: none;
+    appearance: none;
+    background: none;
+    border: 0;
+    padding: 0.75rem 0 0.75rem 1.25rem;
+    cursor: pointer;
+  }
+
+  .burger__lines {
+    display: block;
+    width: 26px;
+  }
+
+  .burger__lines span {
+    display: block;
+    height: 1px;
+    background: var(--ink);
+    transition: transform 400ms var(--ease);
+  }
+
+  .burger__lines span + span {
+    margin-top: 7px;
+  }
+
+  .burger:hover .burger__lines span + span {
+    transform: translateX(6px);
+  }
+
+  /* ------------------------------------------------------------- sheet */
+
+  .sheet {
+    position: fixed;
+    inset: 0;
+    z-index: 150;
+    background: var(--paper);
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    transition: opacity 420ms var(--ease);
+  }
+
+  .sheet[hidden] {
+    display: none;
+  }
+
+  .sheet.is-open {
+    opacity: 1;
+  }
+
+  .sheet__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: var(--header-h);
+    border-bottom: 1px solid var(--rule);
+    width: 100%;
+  }
+
+  .sheet__close {
+    appearance: none;
+    background: none;
+    border: 0;
+    padding: 0.75rem 0;
+    cursor: pointer;
+    font-size: var(--fs-micro);
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  .sheet__close:hover {
+    color: var(--accent-ink);
+  }
+
+  .sheet__nav {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding-block: clamp(2rem, 8vh, 4rem);
+    overflow-y: auto;
+  }
+
+  .sheet__nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+  }
+
+  .sheet__nav li {
+    border-bottom: 1px solid var(--rule);
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  .sheet.is-open .sheet__nav li {
+    opacity: 1;
+    transform: none;
+    transition: opacity 500ms var(--ease), transform 500ms var(--ease);
+    transition-delay: calc(90ms + var(--i) * 55ms);
+  }
+
+  .sheet__link {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    padding-block: clamp(0.85rem, 2.4vh, 1.3rem);
+    font-family: var(--serif);
+    font-size: clamp(2rem, 8.5vw, 3.25rem);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    transition: color 350ms var(--ease);
+  }
+
+  .sheet__link.is-active,
+  .sheet__link:hover {
+    color: var(--accent-ink);
+  }
+
+  /* same rule as the desktop nav: current page is not colour-only */
+  .sheet__link.is-active .sheet__num {
+    color: var(--accent-ink);
+  }
+
+  .sheet__link.is-active::after {
+    content: '';
+    align-self: center;
+    width: 1.75rem;
+    height: 1px;
+    background: currentColor;
+    margin-left: auto;
+  }
+
+  .sheet__num {
+    font-family: var(--sans);
+    font-size: var(--fs-micro);
+    letter-spacing: 0.14em;
+    color: var(--ink-faint);
+    flex: none;
+  }
+
+  .sheet__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gap);
+    width: 100%;
+    padding-block: 1.5rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  /* ------------------------------------------------------------- responsive */
+
+  @media (max-width: 1080px) {
+    .nav__list {
+      gap: 1.5rem;
+    }
+  }
+
+  @media (max-width: 900px) {
+    .nav {
+      display: none;
+    }
+
+    .burger {
+      display: block;
+    }
+
+    .brand__name {
+      font-size: 0.625rem;
+      letter-spacing: 0.12em;
+    }
+  }
+
+  @media (max-width: 420px) {
+    .brand__name {
+      /* keep the monogram, drop the long wordmark before it can wrap */
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  const sheet = document.getElementById('mobile-menu');
+  const openBtn = document.querySelector('[data-menu-open]');
+  const closeBtn = document.querySelector('[data-menu-close]');
+
+  if (sheet && openBtn && closeBtn) {
+    const focusables = () =>
+      sheet.querySelectorAll('a[href], button:not([disabled])');
+
+    let lastFocused = null;
+
+    const open = () => {
+      lastFocused = document.activeElement;
+      sheet.hidden = false;
+      // next frame, so the opacity transition has a starting value to run from
+      requestAnimationFrame(() => sheet.classList.add('is-open'));
+      openBtn.setAttribute('aria-expanded', 'true');
+      document.body.style.overflow = 'hidden';
+      focusables()[0]?.focus();
+    };
+
+    const close = () => {
+      sheet.classList.remove('is-open');
+      openBtn.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+      const done = () => {
+        sheet.hidden = true;
+        sheet.removeEventListener('transitionend', done);
+      };
+      sheet.addEventListener('transitionend', done);
+      lastFocused instanceof HTMLElement ? lastFocused.focus() : openBtn.focus();
+    };
+
+    openBtn.addEventListener('click', open);
+    closeBtn.addEventListener('click', close);
+
+    // close on navigation to an in-page target
+    sheet.addEventListener('click', (e) => {
+      if (e.target instanceof Element && e.target.closest('a')) close();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (sheet.hidden) return;
+
+      if (e.key === 'Escape') {
+        close();
+        return;
+      }
+
+      // keep tab focus inside the open sheet
+      if (e.key === 'Tab') {
+        const items = [...focusables()];
+        if (!items.length) return;
+        const first = items[0];
+        const last = items[items.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    });
+
+    // if the viewport grows past the mobile breakpoint, drop the sheet
+    const mq = window.matchMedia('(min-width: 901px)');
+    mq.addEventListener('change', (e) => {
+      if (e.matches && !sheet.hidden) close();
+    });
+  }
+</script>

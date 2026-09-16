@@ -1,0 +1,185 @@
+---
+/**
+ * IMAGE FIELD
+ *
+ * Upload, preview, replace, remove — the four states an image can be in on an
+ * edit form, in one block.
+ *
+ * ---------------------------------------------------------------------------
+ * WHAT THE SCRIPT DOES AND WHAT HAPPENS WITHOUT IT
+ * ---------------------------------------------------------------------------
+ * Without JavaScript: the file input works, the form posts, the image is
+ * uploaded. `width` and `height` stay null in the database — both columns are
+ * nullable for exactly this reason.
+ *
+ * With JavaScript: the chosen file is shown before it is sent, and its true
+ * pixel dimensions are measured and written into two hidden fields, so the
+ * public site can reserve the right space for it.
+ *
+ * The preview uses an object URL rather than a FileReader data URL. A 20 MB
+ * photograph base64-encoded into the DOM is 27 MB of string; an object URL is
+ * a pointer. It is revoked when replaced, because the browser holds the file
+ * alive until it is.
+ */
+
+import { publicUrl } from '../../lib/supabase/storage.js';
+import { formatBytes } from '../../lib/admin/media.js';
+
+const {
+  /** the current media row, or null */
+  media = null,
+  label = 'Image',
+  /** which bucket a new file goes to — submitted so the route need not guess */
+  bucket = 'artworks',
+  hint = '',
+  /** offer the "remove" checkbox (not on a create form — nothing to remove) */
+  allowRemove = true,
+  /** namespaces the ids — required when a page carries more than one form */
+  idPrefix = 'f',
+} = Astro.props;
+
+const fileId = `${idPrefix}-image`;
+const altId = `${idPrefix}-alt`;
+const captionId = `${idPrefix}-caption`;
+const removeId = `${idPrefix}-remove_image`;
+
+const src = media ? publicUrl(media.bucket, media.path) : '';
+const dimensions = media?.width && media?.height ? `${media.width} × ${media.height}` : '';
+---
+
+<div class="imagefield" data-imagefield>
+  <div class="imagefield__preview">
+    {
+      src ? (
+        <img src={src} alt={media.alt || ''} loading="lazy" decoding="async" data-preview />
+      ) : (
+        <img src="" alt="" hidden data-preview />
+      )
+    }
+    {!src && <span class="imagefield__empty" data-empty>No image</span>}
+  </div>
+
+  <div class="imagefield__body">
+    <input type="hidden" name="bucket" value={bucket} />
+    <input type="hidden" name="image_width" value="" data-width />
+    <input type="hidden" name="image_height" value="" data-height />
+
+    <div class="field">
+      <label class="field__label" for={fileId}>
+        {media ? `Replace ${label.toLowerCase()}` : label}
+      </label>
+      <input
+        type="file"
+        id={fileId}
+        name="image"
+        accept="image/jpeg,image/png,image/webp,image/avif,image/gif"
+        aria-describedby={`${fileId}-hint`}
+        data-file
+      />
+      <p class="field__hint" id={`${fileId}-hint`}>
+        {hint || 'JPEG, PNG, WebP, AVIF or GIF. Up to 20 MB.'}
+      </p>
+    </div>
+
+    {
+      media && (
+        <p class="imagefield__meta">
+          {media.path}
+          <br />
+          {[media.bucket, media.mime_type, dimensions, formatBytes(media.byte_size)]
+            .filter(Boolean)
+            .join(' · ')}
+        </p>
+      )
+    }
+
+    <div class="field">
+      <label class="field__label" for={altId}>Alt text</label>
+      <input type="text" id={altId} name="alt" value={media?.alt ?? ''} aria-describedby={`${altId}-hint`} />
+      <p class="field__hint" id={`${altId}-hint`}>
+        What the image shows, for a reader who cannot see it. Left empty, the
+        site falls back to the title.
+      </p>
+    </div>
+
+    <div class="field">
+      <label class="field__label" for={captionId}>Caption</label>
+      <input type="text" id={captionId} name="caption" value={media?.caption ?? ''} />
+    </div>
+
+    {
+      media && allowRemove && (
+        <label class="check" for={removeId}>
+          <input type="checkbox" id={removeId} name="remove_image" value="1" />
+          <span class="check__text">
+            <b>Remove this image on save</b>
+            <span>
+              The file is deleted from storage unless something else still uses
+              it. Ticking this and choosing a new file at the same time keeps
+              the new one.
+            </span>
+          </span>
+        </label>
+      )
+    }
+  </div>
+</div>
+
+<script>
+  /* Scoped to each field on the page, so a form carrying two images — none
+     does today — would not have one overwrite the other's hidden inputs. */
+  document.querySelectorAll('[data-imagefield]').forEach((root) => {
+    const input = root.querySelector('[data-file]');
+    const preview = root.querySelector('[data-preview]');
+    const empty = root.querySelector('[data-empty]');
+    const widthField = root.querySelector('[data-width]');
+    const heightField = root.querySelector('[data-height]');
+
+    if (!(input instanceof HTMLInputElement) || !(preview instanceof HTMLImageElement)) return;
+
+    let objectUrl = '';
+
+    input.addEventListener('change', () => {
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+        objectUrl = '';
+      }
+
+      const file = input.files && input.files[0];
+
+      if (!file) {
+        if (widthField instanceof HTMLInputElement) widthField.value = '';
+        if (heightField instanceof HTMLInputElement) heightField.value = '';
+        return;
+      }
+
+      objectUrl = URL.createObjectURL(file);
+      preview.src = objectUrl;
+      preview.hidden = false;
+      preview.alt = 'Preview of the selected file';
+      if (empty instanceof HTMLElement) empty.hidden = true;
+
+      /* naturalWidth is only meaningful once the browser has decoded the file.
+         Reading it before `load` gives 0, which would be written to the
+         database as a real measurement. */
+      preview.addEventListener(
+        'load',
+        () => {
+          if (widthField instanceof HTMLInputElement) {
+            widthField.value = String(preview.naturalWidth || '');
+          }
+          if (heightField instanceof HTMLInputElement) {
+            heightField.value = String(preview.naturalHeight || '');
+          }
+        },
+        { once: true }
+      );
+    });
+
+    /* The object URL keeps the file in memory for as long as the document
+       lives. Navigating away without this leaks it. */
+    window.addEventListener('pagehide', () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    });
+  });
+</script>

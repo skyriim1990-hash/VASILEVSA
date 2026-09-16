@@ -1,0 +1,212 @@
+---
+import Media from '../components/Media.astro';
+import Disclosure from '../components/Disclosure.astro';
+/* `path` is no longer imported: the only call was the "See the project" link
+   in the Art × Sport teaser. */
+import { useTranslations } from '../i18n/utils.js';
+
+const { lang = 'en' } = Astro.props;
+const t = useTranslations(lang);
+
+/* The opening statement is set one sentence per line. Splitting on the
+   sentence boundary rather than on a fixed number of parts means a
+   translation with two or four sentences still renders — the earlier
+   version indexed [0][1][2] and would have printed "undefined." */
+const statementLines = t('about.statement')
+  .split(/(?<=\.)\s+/)
+  .filter(Boolean);
+
+/* Only the facts that were supplied. Nothing is extrapolated. */
+const sections = [
+  { k: 'intro', title: t('about.introTitle'), body: [t('about.intro1'), t('about.intro2')] },
+  { k: 'bio', title: t('about.bioTitle'), body: [t('about.bio1'), t('about.bio2')] },
+  { k: 'phil', title: t('about.philTitle'), body: [t('about.phil1'), t('about.phil2')] },
+  { k: 'practice', title: t('about.practiceTitle'), body: [t('about.practice1')] },
+];
+---
+
+<!-- ================================================== OPENING -->
+<section class="about-open">
+  <div class="shell">
+    <div class="about-open__row">
+      <p class="micro reveal">{t('about.title')}</p>
+      <p class="micro about-open__loc reveal" data-delay="1">{t('site.location')}</p>
+    </div>
+
+    <h1 class="about-open__statement h1">
+      {
+        statementLines.map((line, i) => (
+          <span class="reveal-line" data-delay={i ? String(i) : undefined}>
+            <span>{line}</span>
+          </span>
+        ))
+      }
+    </h1>
+  </div>
+
+  <div class="shell about-open__spread">
+    <div class="about-open__portrait reveal">
+      <Media
+        ratio="4 / 5"
+        label={t('ph.portrait')}
+        tone={2}
+        kind="portrait"
+        note={t('ph.awaiting')}
+        priority={true}
+        sizes="(max-width: 860px) 78vw, 34vw"
+      />
+    </div>
+
+    <div class="about-open__side">
+      <p class="lead reveal" data-delay="1">{t('about.intro1')}</p>
+      <p class="body reveal" data-delay="2">{t('about.intro2')}</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================== TEXT -->
+<section class="section about-text on-tone" aria-label={t('about.title')}>
+  <div class="shell">
+    {
+      sections.slice(1).map((s) => (
+        <article class="chunk">
+          <h2 class="micro chunk__label reveal">{s.title}</h2>
+          <div class="chunk__body">
+            {s.body.map((p, i) => (
+              <p class:list={[i === 0 ? 'chunk__lead' : 'body', 'reveal']} data-delay={String(i + 1)}>
+                {p}
+              </p>
+            ))}
+          </div>
+        </article>
+      ))
+    }
+  </div>
+</section>
+
+{/* Art × Sport had a teaser section here: the chain line, a heading, a
+    paragraph, a "See the project" link and a placeholder frame. It has been
+    removed — the project has its own page at /art-sport and its own entry in
+    the navigation, and repeating it at the foot of About made the biography
+    end on somebody else's subject. Nothing about the project was deleted:
+    src/views/ArtSportView.astro and the about.as* strings in src/i18n/ui.js
+    are untouched.
+
+    Written as a JSX comment, not an HTML one — Astro emits <!-- --> into the
+    built page, and the note would have shipped to every visitor. */}
+
+<Disclosure lang={lang} />
+
+<style>
+  /* ------------------------------------------------------------- opening */
+
+  .about-open {
+    padding-top: clamp(3rem, 8vw, 7rem);
+  }
+
+  .about-open__row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--gap);
+    padding-bottom: clamp(1.5rem, 4vw, 3rem);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .about-open__loc {
+    color: var(--ink-faint);
+  }
+
+  .about-open__statement {
+    padding-top: clamp(1.75rem, 4vw, 3rem);
+    max-width: 16ch;
+  }
+
+  .about-open__spread {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: clamp(2rem, 6vw, 6rem);
+    align-items: end;
+    padding-top: clamp(3rem, 7vw, 6rem);
+  }
+
+  .about-open__side {
+    display: grid;
+    gap: clamp(1.25rem, 2.5vw, 1.85rem);
+    padding-bottom: clamp(0rem, 4vw, 3rem);
+  }
+
+  /* ------------------------------------------------------------- chunks */
+
+  /* Biography, Philosophy and Practice sit on the secondary tone. The opening
+     — statement and portrait — stays on paper, so the page opens light and
+     settles into the reading. One step, once; a tone per chunk would turn the
+     biography into a stack of cards. */
+  .about-text {
+    background: var(--paper-deep);
+  }
+
+  .chunk {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: clamp(1rem, 6vw, 6rem);
+    padding-block: clamp(2.5rem, 5vw, 4rem);
+    border-top: 1px solid var(--rule);
+  }
+
+  .chunk:last-child {
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .chunk__label {
+    position: sticky;
+    top: calc(var(--header-h) + 2rem);
+    align-self: start;
+  }
+
+  .chunk__body {
+    max-width: 54ch;
+  }
+
+  .chunk__lead {
+    font-size: var(--fs-lead);
+    line-height: 1.5;
+    color: var(--ink);
+  }
+
+  .chunk__lead + .body {
+    margin-top: 1.35em;
+  }
+
+  /* The .about-as* rules that sat here went with the section above. Astro
+     scopes this stylesheet to this component, so they styled nothing else;
+     /art-sport carries its own. */
+
+  /* ============================================================= responsive */
+
+  @media (max-width: 860px) {
+    .about-open__spread {
+      grid-template-columns: minmax(0, 1fr);
+      align-items: start;
+    }
+
+    .about-open__portrait {
+      width: 78%;
+    }
+
+    .chunk {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 1.25rem;
+    }
+
+    .chunk__label {
+      position: static;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .about-open__statement {
+      max-width: 100%;
+    }
+  }
+</style>

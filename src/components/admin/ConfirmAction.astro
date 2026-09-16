@@ -1,0 +1,93 @@
+---
+/**
+ * CONFIRM ACTION
+ *
+ * A destructive action behind a deliberate second step.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY <details> AND NOT window.confirm
+ * ---------------------------------------------------------------------------
+ * confirm() needs JavaScript, so without it the button becomes a one-click
+ * delete — the failure mode is the dangerous one. It also cannot say anything
+ * specific: a native dialog gets one line of unstyled text and no room for
+ * "this image is used by 3 artworks".
+ *
+ * <details> is a disclosure widget the browser already makes keyboard
+ * accessible and announces as expandable. Closed, there is no submit button in
+ * the document at all — the destructive control does not exist until it has
+ * been asked for.
+ *
+ * The form is POST. A delete reachable by GET is a delete any prefetcher,
+ * crawler or <img> tag can perform.
+ */
+
+const {
+  action,
+  label = 'Delete',
+  /** the sentence shown once opened — say what disappears, specifically */
+  question = 'This cannot be undone.',
+  confirmLabel = 'Delete permanently',
+  /** extra fields posted alongside, e.g. { force: '1' } */
+  fields = {},
+  disabled = false,
+} = Astro.props;
+---
+
+<details class="confirm">
+  <summary class="btn btn--danger btn--small">{label}</summary>
+
+  <div class="confirm__body">
+    <p class="confirm__q">{question}</p>
+
+    <form method="POST" action={action}>
+      {Object.entries(fields).map(([name, value]) => (
+        <input type="hidden" name={name} value={String(value)} />
+      ))}
+
+      <button type="submit" class="btn btn--danger btn--small" disabled={disabled || undefined}>
+        {confirmLabel}
+      </button>
+    </form>
+  </div>
+</details>
+
+<style>
+  .confirm {
+    display: inline-block;
+    position: relative;
+  }
+
+  /* the default triangle would sit inside a button and read as a dropdown */
+  .confirm summary {
+    list-style: none;
+    user-select: none;
+  }
+
+  .confirm summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .confirm__body {
+    /* absolute so opening a row in a table does not reflow every row below
+       it — the panel sits over the content instead of pushing it */
+    position: absolute;
+    right: 0;
+    z-index: 5;
+    width: max-content;
+    max-width: min(280px, 70vw);
+    margin-top: 0.35rem;
+    padding: 0.75rem;
+    border: 1px solid var(--danger, #9a2b1e);
+    background: #fff;
+    box-shadow: 0 8px 24px rgba(17, 17, 17, 0.12);
+    text-align: left;
+    white-space: normal;
+  }
+
+  .confirm__q {
+    margin: 0 0 0.6rem;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: var(--ink, #111);
+  }
+</style>

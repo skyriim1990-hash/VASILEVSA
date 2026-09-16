@@ -1,0 +1,11 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ArtSportView from '../views/ArtSportView.astro';
+import { useTranslations } from '../i18n/utils.js';
+
+const t = useTranslations('en');
+---
+
+<BaseLayout lang="en" title={t('as.title')} description={t('as.lead')}>
+  <ArtSportView lang="en" />
+</BaseLayout>

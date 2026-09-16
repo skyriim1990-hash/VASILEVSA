@@ -1,0 +1,16 @@
+---
+/** Micro label on the left, optional note on the right, hairline underneath. */
+const { label, note = '', id } = Astro.props;
+---
+
+<div class="sec-head reveal">
+  <h2 class="micro micro--ink sec-head__label" id={id}>{label}</h2>
+  {note && <p class="sec-head__note">{note}</p>}
+</div>
+
+<style>
+  .sec-head__label {
+    font-family: var(--sans);
+    line-height: 1.4;
+  }
+</style>

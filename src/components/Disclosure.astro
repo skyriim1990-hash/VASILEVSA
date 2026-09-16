@@ -1,0 +1,15 @@
+---
+import { useTranslations } from '../i18n/utils.js';
+
+/**
+ * The placeholder footnote. Sits at the foot of every page that shows
+ * marked placeholders, stating plainly that they are not works by the
+ * artist. Delete the component's usages once real photography is in.
+ */
+const { lang = 'en' } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<div class="shell disclosure">
+  <p class="disclosure__text">{t('ph.note')}</p>
+</div>

@@ -1,0 +1,322 @@
+---
+import Media from '../components/Media.astro';
+import ArtworkCard from '../components/ArtworkCard.astro';
+import Statistics from '../components/Statistics.astro';
+import SectionHeader from '../components/SectionHeader.astro';
+import Disclosure from '../components/Disclosure.astro';
+import { useTranslations, path } from '../i18n/utils.js';
+import { artworks, artworkIndex } from '../data/content.js';
+
+const { lang = 'en' } = Astro.props;
+const t = useTranslations(lang);
+
+const stats = [
+  { n: t('as.stat1n'), l: t('as.stat1l') },
+  { n: t('as.stat2n'), l: t('as.stat2l') },
+  { n: t('as.stat3n'), l: t('as.stat3l') },
+];
+
+/**
+ * The five narrative chapters.
+ *   side  — which way the spread leans
+ *   w     — how many of the 12 columns the image takes. Portrait images get
+ *           fewer columns, otherwise a 4/5 across seven columns becomes a
+ *           thousand pixels tall and swallows the chapter it belongs to.
+ */
+const chapters = [
+  { n: '01', t: t('as.ch1t'), b: t('as.ch1b'), ratio: '16 / 10', side: 'left', w: 7, tone: 1 },
+  { n: '02', t: t('as.ch2t'), b: t('as.ch2b'), ratio: '4 / 5', side: 'right', w: 5, tone: 3 },
+  { n: '03', t: t('as.ch3t'), b: t('as.ch3b'), ratio: '3 / 4', side: 'left', w: 5, tone: 2 },
+  { n: '04', t: t('as.ch4t'), b: t('as.ch4b'), ratio: '3 / 2', side: 'right', w: 7, tone: 4 },
+  { n: '05', t: t('as.ch5t'), b: t('as.ch5b'), ratio: '1 / 1', side: 'left', w: 6, tone: 2 },
+];
+
+/* the series closes on real works — action painting, then anything selected */
+const results = artworks.filter((a) => a.category === 'action-painting').slice(0, 3);
+---
+
+<!-- ================================================== OPENING -->
+<section class="as-open">
+  <div class="shell">
+    <p class="micro micro--accent reveal">{t('as.chain')}</p>
+
+    <h1 class="as-open__title display">
+      <span class="reveal-line"><span>Art</span></span>
+      <span class="reveal-line" data-delay="1"><span><span class="amp">×</span> Sport<span class="dot">.</span></span></span>
+    </h1>
+
+    <div class="as-open__lead">
+      <p class="lead reveal" data-delay="2">{t('as.lead')}</p>
+    </div>
+  </div>
+
+  <div class="shell">
+    <div class="as-open__media reveal">
+      <Media
+        ratio="21 / 9"
+        label={t('ph.artsport')}
+        index="01"
+        tone={4}
+        kind="process"
+        note={t('ph.awaiting')}
+        priority={true}
+        sizes="100vw"
+      />
+    </div>
+
+    <Statistics items={stats} class="as-open__stats" />
+  </div>
+</section>
+
+<!-- ================================================== CHAPTERS -->
+<section class="section" aria-label={t('as.title')}>
+  <div class="shell">
+    {
+      chapters.map((c, i) => (
+        <article class:list={['chapter', `chapter--${c.side}`, `chapter--w${c.w}`]}>
+          <div class="chapter__media reveal">
+            <Media
+              ratio={c.ratio}
+              label={t('ph.artsport')}
+              index={c.n}
+              tone={c.tone}
+              kind="process"
+              note={t('ph.awaiting')}
+              sizes={`(max-width: 760px) 92vw, ${Math.round((c.w / 12) * 100)}vw`}
+            />
+          </div>
+
+          <div class="chapter__text">
+            <p class="micro chapter__n reveal">{c.n}</p>
+            <h2 class="h2 chapter__title reveal" data-delay="1">{c.t}</h2>
+            <p class="body reveal" data-delay="2">{c.b}</p>
+          </div>
+        </article>
+      ))
+    }
+  </div>
+</section>
+
+<!-- ================================================== FILM (reserved) -->
+<section class="film on-tone">
+  <div class="shell">
+    <SectionHeader label={t('as.filmTitle')} note={t('as.filmNote')} />
+    <div class="reveal">
+      <Media
+        ratio="16 / 9"
+        label={t('ph.video')}
+        tone={4}
+        kind="video"
+        note={t('ph.awaitingVideo')}
+        sizes="100vw"
+      />
+    </div>
+  </div>
+</section>
+
+<!-- ================================================== RESULT -->
+<section class="section" aria-labelledby="as-result">
+  <div class="shell">
+    <SectionHeader id="as-result" label={`06 — ${t('as.ch6t')}`} note={t('as.ch6b')} />
+
+    <div class="result">
+      {
+        results.map((artwork, i) => (
+          <div class:list={['result__cell', `result__cell--${i + 1}`, 'reveal']} data-delay={String(i + 1)}>
+            <ArtworkCard
+              artwork={artwork}
+              index={artworkIndex(artwork.id)}
+              lang={lang}
+              sizes="(max-width: 720px) 92vw, 32vw"
+            />
+          </div>
+        ))
+      }
+    </div>
+
+    <div class="result__foot reveal">
+      <a class="link" href={`${path('/works', lang)}?c=action-painting`}>
+        <span>{t('common.viewAll')}</span>
+        <span class="link__arrow" aria-hidden="true"></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<Disclosure lang={lang} />
+
+<style>
+  /* ------------------------------------------------------------- opening */
+
+  .as-open {
+    padding-top: clamp(3rem, 8vw, 7rem);
+    padding-bottom: clamp(3rem, 6vw, 5rem);
+  }
+
+  .as-open__title {
+    margin-top: clamp(1.25rem, 3vw, 2.25rem);
+  }
+
+  .as-open__title .amp {
+    font-style: normal;
+    color: var(--accent);
+  }
+
+  .as-open__title .dot {
+    color: var(--accent);
+  }
+
+  .as-open__lead {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: clamp(2rem, 4vw, 3.25rem);
+    padding-bottom: clamp(2.5rem, 5vw, 4rem);
+  }
+
+  .as-open__lead .lead {
+    width: min(100%, 52ch);
+    color: var(--ink-soft);
+  }
+
+  .as-open__media {
+    margin-bottom: clamp(2.5rem, 5vw, 4rem);
+  }
+
+  /* ------------------------------------------------------------- chapters */
+
+  .chapter {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--gap);
+    align-items: center;
+  }
+
+  .chapter + .chapter {
+    margin-top: clamp(4rem, 12vw, 11rem);
+  }
+
+  /* image width follows the chapter's proportion, text takes what is left */
+  .chapter--left.chapter--w7 .chapter__media { grid-column: 1 / span 7; }
+  .chapter--left.chapter--w7 .chapter__text { grid-column: 9 / span 4; }
+
+  .chapter--left.chapter--w6 .chapter__media { grid-column: 1 / span 6; }
+  .chapter--left.chapter--w6 .chapter__text { grid-column: 8 / span 4; }
+
+  .chapter--left.chapter--w5 .chapter__media { grid-column: 1 / span 5; }
+  .chapter--left.chapter--w5 .chapter__text { grid-column: 7 / span 4; }
+
+  .chapter--right .chapter__media { grid-row: 1; }
+  .chapter--right .chapter__text { grid-row: 1; grid-column: 1 / span 4; }
+
+  .chapter--right.chapter--w7 .chapter__media { grid-column: 6 / span 7; }
+  .chapter--right.chapter--w6 .chapter__media { grid-column: 7 / span 6; }
+  .chapter--right.chapter--w5 .chapter__media { grid-column: 8 / span 5; }
+
+  .chapter__n {
+    color: var(--accent-ink);
+    margin-bottom: 1rem;
+  }
+
+  .chapter__title {
+    margin-bottom: clamp(1rem, 2vw, 1.5rem);
+  }
+
+  /* ------------------------------------------------------------- film */
+
+  /* The deepest step on the site, used once, here. The film block is the most
+     documentary moment of the most documentary page, and it is the one place
+     a third tone earns itself — /art-sport then reads light, light, deep,
+     light rather than as one even sheet. */
+  .film {
+    background: var(--paper-tint);
+    padding-block: var(--section);
+  }
+
+  /* ------------------------------------------------------------- result */
+
+  .result {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--gap);
+    row-gap: clamp(2.5rem, 6vw, 5rem);
+  }
+
+  .result__cell--1 { grid-column: 1 / span 4; }
+  .result__cell--2 { grid-column: 6 / span 4; margin-top: clamp(1.5rem, 5vw, 4rem); }
+  .result__cell--3 { grid-column: 10 / span 3; }
+
+  .result__foot {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: clamp(3rem, 6vw, 4.5rem);
+  }
+
+  /* ============================================================= tablet */
+
+  @media (max-width: 1024px) {
+    .chapter--left[class] .chapter__media { grid-column: 1 / span 7; }
+    .chapter--left[class] .chapter__text { grid-column: 8 / span 5; }
+
+    .chapter--right[class] .chapter__media { grid-column: 6 / span 7; }
+    .chapter--right[class] .chapter__text { grid-column: 1 / span 5; }
+
+    .as-open__lead {
+      justify-content: flex-start;
+    }
+
+    .result__cell--1 { grid-column: 1 / span 6; }
+    .result__cell--2 { grid-column: 7 / span 6; }
+    .result__cell--3 { grid-column: 1 / span 6; }
+  }
+
+  /* ============================================================= mobile */
+
+  @media (max-width: 760px) {
+    .chapter {
+      grid-template-columns: minmax(0, 1fr);
+      row-gap: clamp(1.25rem, 5vw, 2rem);
+    }
+
+    /* text first, image second — the chapter reads before it is shown.
+       the [class] hook keeps these at the same weight as the column rules
+       above, which are two classes deep */
+    .chapter--left[class] .chapter__media,
+    .chapter--right[class] .chapter__media {
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
+
+    .chapter--left[class] .chapter__text,
+    .chapter--right[class] .chapter__text {
+      grid-column: 1 / -1;
+      grid-row: 1;
+    }
+
+    /* alternate the inset so the sequence keeps its rhythm in one column */
+    .chapter--right .chapter__media {
+      padding-left: 14%;
+    }
+
+    .chapter--left .chapter__media {
+      padding-right: 14%;
+    }
+
+    .result {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .result__cell--1,
+    .result__cell--2,
+    .result__cell--3 {
+      grid-column: 1 / -1;
+      margin-top: 0;
+    }
+
+    .result__cell--2 { padding-left: 20%; }
+    .result__cell--3 { padding-right: 22%; }
+
+    .result__foot {
+      justify-content: flex-start;
+    }
+  }
+</style>

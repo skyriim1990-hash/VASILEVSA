@@ -1,0 +1,33 @@
+---
+/**
+ * TOGGLE
+ *
+ * A checkbox with its explanation, wrapped in the label so the whole row is a
+ * target rather than a 16px square.
+ *
+ * An unchecked checkbox sends nothing at all, which `bool()` in forms.js reads
+ * as false. That only holds because every form here submits the complete
+ * record — a partial update would not be able to tell "unticked" from "not on
+ * this form", and would need a hidden partner field to say which.
+ */
+
+const { name, label, hint = '', checked = false, idPrefix = 'f' } = Astro.props;
+
+const id = `${idPrefix}-${name}`;
+const hintId = hint ? `${id}-hint` : undefined;
+---
+
+<label class="check" for={id}>
+  <input
+    type="checkbox"
+    id={id}
+    name={name}
+    value="1"
+    checked={checked}
+    aria-describedby={hintId}
+  />
+  <span class="check__text">
+    <b>{label}</b>
+    {hint && <span id={hintId}>{hint}</span>}
+  </span>
+</label>

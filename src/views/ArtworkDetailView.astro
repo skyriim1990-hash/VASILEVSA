@@ -1,0 +1,279 @@
+---
+import Media from '../components/Media.astro';
+import { useTranslations, path } from '../i18n/utils.js';
+import { artworkIndex, neighbours } from '../data/content.js';
+import { displayTitle, displayAlt, value, categoryLabel, tone } from '../utils/display.js';
+
+const { artwork, lang = 'en' } = Astro.props;
+const t = useTranslations(lang);
+
+const index = artworkIndex(artwork.id);
+const title = displayTitle(artwork, t, index);
+const alt = displayAlt(artwork, t, index);
+const { prev, next } = neighbours(artwork.id);
+
+const meta = [
+  { k: t('detail.year'), v: value(artwork.year) },
+  { k: t('detail.medium'), v: value(artwork.medium) },
+  { k: t('detail.dimensions'), v: value(artwork.dimensions) },
+  { k: t('detail.category'), v: categoryLabel(artwork.category) },
+];
+
+const incomplete = !artwork.title || !artwork.year || !artwork.medium || !artwork.dimensions;
+---
+
+<article class="work">
+  <div class="shell">
+    <div class="work__crumb">
+      <a class="work__back" href={path('/works', lang)}>
+        <span class="work__back-arrow" aria-hidden="true"></span>
+        <span>{t('common.back')}</span>
+      </a>
+      <p class="micro work__index">{index}</p>
+    </div>
+
+    <div class="work__body">
+      <div class="work__view reveal">
+        <Media
+          src={artwork.image}
+          alt={alt}
+          ratio={artwork.ratio}
+          label={t('ph.artwork')}
+          index={index}
+          tone={tone(Number(index))}
+          priority={true}
+          sizes="(max-width: 900px) 92vw, 58vw"
+        />
+      </div>
+
+      <div class="work__info">
+        <h1 class="h2 work__title reveal">{title}</h1>
+
+        <dl class="work__meta reveal" data-delay="1">
+          {
+            meta.map((row) => (
+              <div class="work__row">
+                <dt class="micro">{row.k}</dt>
+                <dd>{row.v}</dd>
+              </div>
+            ))
+          }
+        </dl>
+
+        {
+          artwork.description && (
+            <div class="work__desc reveal" data-delay="2">
+              <p class="micro work__desc-head">{t('detail.about')}</p>
+              <p class="body">{artwork.description}</p>
+            </div>
+          )
+        }
+
+        {incomplete && <p class="work__pending reveal" data-delay="2">{t('detail.pendingNote')}</p>}
+
+        <div class="work__cta reveal" data-delay="3">
+          <a class="link" href={path('/contact', lang)}>
+            <span>{t('detail.enquire')}</span>
+            <span class="link__arrow" aria-hidden="true"></span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <nav class="pager" aria-label={`${t('common.prev')} / ${t('common.next')}`}>
+      {
+        prev && (
+          <a class="pager__side pager__side--prev" href={path(`/works/${prev.id}`, lang)}>
+            <span class="micro">{t('common.prev')}</span>
+            <span class="pager__label serif">{displayTitle(prev, t, artworkIndex(prev.id))}</span>
+          </a>
+        )
+      }
+      {
+        next && (
+          <a class="pager__side pager__side--next" href={path(`/works/${next.id}`, lang)}>
+            <span class="micro">{t('common.next')}</span>
+            <span class="pager__label serif">{displayTitle(next, t, artworkIndex(next.id))}</span>
+          </a>
+        )
+      }
+    </nav>
+  </div>
+</article>
+
+<style>
+  .work {
+    padding-top: clamp(2rem, 5vw, 3.5rem);
+    padding-bottom: clamp(4rem, 8vw, 7rem);
+  }
+
+  .work__crumb {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--gap);
+    padding-bottom: clamp(1.5rem, 3vw, 2.25rem);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .work__back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.85rem;
+    font-size: var(--fs-micro);
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    transition: color 400ms var(--ease);
+  }
+
+  .work__back:hover {
+    color: var(--accent-ink);
+  }
+
+  .work__back-arrow {
+    width: 2rem;
+    height: 1px;
+    background: currentColor;
+    position: relative;
+    transition: width 450ms var(--ease);
+  }
+
+  .work__back-arrow::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 6px;
+    height: 6px;
+    border-bottom: 1px solid currentColor;
+    border-left: 1px solid currentColor;
+    transform: translateY(-50%) rotate(45deg);
+  }
+
+  .work__back:hover .work__back-arrow {
+    width: 2.75rem;
+  }
+
+  .work__index {
+    color: var(--ink-faint);
+  }
+
+  /* the artwork is given the room a gallery would give it */
+  .work__body {
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+    gap: clamp(2rem, 6vw, 6rem);
+    align-items: start;
+    padding-top: clamp(2.5rem, 5vw, 4.5rem);
+  }
+
+  .work__info {
+    position: sticky;
+    top: calc(var(--header-h) + 2.5rem);
+  }
+
+  .work__title {
+    max-width: 18ch;
+  }
+
+  .work__meta {
+    margin: clamp(1.75rem, 3.5vw, 2.75rem) 0 0;
+    border-top: 1px solid var(--rule);
+  }
+
+  .work__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+    gap: var(--gap);
+    padding-block: 0.9rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .work__row dt {
+    color: var(--ink-soft);
+    padding-top: 0.2rem;
+  }
+
+  .work__row dd {
+    margin: 0;
+    font-size: var(--fs-body);
+  }
+
+  .work__desc {
+    margin-top: clamp(1.75rem, 3.5vw, 2.5rem);
+  }
+
+  .work__desc-head {
+    margin-bottom: 0.75rem;
+  }
+
+  .work__pending {
+    margin-top: clamp(1.5rem, 3vw, 2.25rem);
+    font-size: var(--fs-small);
+    line-height: 1.65;
+    color: var(--ink-faint);
+    max-width: 36ch;
+  }
+
+  .work__cta {
+    margin-top: clamp(2rem, 4vw, 3rem);
+  }
+
+  /* ------------------------------------------------------------- pager */
+
+  .pager {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--gap);
+    margin-top: clamp(4rem, 8vw, 7rem);
+    border-top: 1px solid var(--rule);
+  }
+
+  .pager__side {
+    display: grid;
+    gap: 0.55rem;
+    padding-top: clamp(1.5rem, 3vw, 2.25rem);
+    transition: color 400ms var(--ease);
+  }
+
+  .pager__side--next {
+    text-align: right;
+    border-left: 1px solid var(--rule);
+    padding-left: var(--gap);
+  }
+
+  .pager__label {
+    font-size: clamp(1.15rem, 2.2vw, 1.7rem);
+    line-height: 1.15;
+  }
+
+  .pager__side:hover {
+    color: var(--accent-ink);
+  }
+
+  @media (max-width: 900px) {
+    .work__body {
+      grid-template-columns: minmax(0, 1fr);
+      gap: clamp(1.75rem, 6vw, 2.5rem);
+    }
+
+    .work__info {
+      position: static;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .pager {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .pager__side--next {
+      text-align: left;
+      border-left: 0;
+      border-top: 1px solid var(--rule);
+      padding-left: 0;
+    }
+  }
+</style>

@@ -1,0 +1,38 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { useTranslations, path } from '../i18n/utils.js';
+
+const t = useTranslations('en');
+---
+
+<BaseLayout lang="en" title={t('404.title')} description={t('404.lead')}>
+  <section class="nf">
+    <div class="shell">
+      <p class="micro">404</p>
+      <h1 class="h1 nf__title">{t('404.title')}</h1>
+      <p class="body nf__lead">{t('404.lead')}</p>
+      <a class="link nf__cta" href={path('/', 'en')}>
+        <span>{t('404.cta')}</span>
+        <span class="link__arrow" aria-hidden="true"></span>
+      </a>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .nf {
+    display: flex;
+    align-items: center;
+    min-height: 62vh;
+    padding-block: clamp(4rem, 10vw, 8rem);
+  }
+
+  .nf__title {
+    margin: clamp(1rem, 2.5vw, 1.75rem) 0 1rem;
+    max-width: 14ch;
+  }
+
+  .nf__cta {
+    margin-top: clamp(1.75rem, 3vw, 2.5rem);
+  }
+</style>

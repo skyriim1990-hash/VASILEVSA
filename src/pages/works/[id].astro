@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ArtworkDetailView from '../../views/ArtworkDetailView.astro';
+import { artworks, artworkIndex } from '../../data/content.js';
+import { useTranslations } from '../../i18n/utils.js';
+import { displayTitle } from '../../utils/display.js';
+
+export function getStaticPaths() {
+  return artworks.map((artwork) => ({
+    params: { id: artwork.id },
+    props: { artwork },
+  }));
+}
+
+const { artwork } = Astro.props;
+const t = useTranslations('en');
+const title = displayTitle(artwork, t, artworkIndex(artwork.id));
+---
+
+<BaseLayout lang="en" title={title} description={artwork.description || t('meta.description')}>
+  <ArtworkDetailView artwork={artwork} lang="en" />
+</BaseLayout>

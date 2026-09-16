@@ -1,0 +1,96 @@
+---
+/**
+ * EXHIBITION FORM
+ *
+ * Shared by the create and edit routes.
+ *
+ * `year` and the two dates are not redundant. The public timeline groups by
+ * year and nothing else, exactly as byYearDescending() in
+ * src/data/exhibitions.js does today; the dates are optional precision for a
+ * record that has them. A show can be entered as "2019" and nothing more.
+ */
+
+import Field from './Field.astro';
+import Toggle from './Toggle.astro';
+import ImageField from './ImageField.astro';
+import { EXHIBITION_TYPES } from '../../lib/admin/exhibitionForm.js';
+
+const {
+  exhibition = null,
+  isNew = !exhibition,
+  action,
+  submitLabel = 'Save',
+} = Astro.props;
+
+const value = (key, fallback = '') => exhibition?.[key] ?? fallback;
+---
+
+<form class="form" method="POST" action={action} enctype="multipart/form-data">
+  <div class="panel">
+    <p class="panel__title">The exhibition</p>
+
+    <div class="form__grid">
+      <Field name="title" label="Title" value={value('title')} wide />
+
+      <Field name="venue" label="Venue" value={value('venue')}
+        hint="Gallery, museum or institution." />
+
+      <Field name="exhibition_type" label="Type" type="select"
+        value={value('exhibition_type')} options={EXHIBITION_TYPES} />
+
+      <Field name="city" label="City" value={value('city')} />
+
+      <Field name="country" label="Country" value={value('country')} />
+
+      <Field name="year" label="Year" type="number" value={value('year')}
+        min="1800" max="2200" step="1" inputmode="numeric"
+        hint="What the timeline groups by. Entries without one fall to the end." />
+
+      <Field name="url" label="Link" type="url" value={value('url')}
+        placeholder="https://"
+        hint="An external page about the show. Optional." />
+
+      <Field name="start_date" label="Opened" type="date" value={value('start_date')} />
+
+      <Field name="end_date" label="Closed" type="date" value={value('end_date')} />
+
+      <Field name="description" label="Description" type="textarea"
+        value={value('description')} wide />
+    </div>
+  </div>
+
+  <div class="panel">
+    <p class="panel__title">Image</p>
+
+    <ImageField
+      media={exhibition?.media ?? null}
+      bucket="artworks"
+      label="Image"
+      hint="Installation view or poster. Stored in the artworks bucket. Optional."
+      allowRemove={!isNew}
+    />
+  </div>
+
+  <div class="panel">
+    <p class="panel__title">Placement</p>
+
+    <div class="form__grid">
+      <Field name="slug" label="Slug" value={value('slug')}
+        hint={isNew ? 'Left empty, it is made from the title or the venue.' : 'Used as the record identifier.'} />
+
+      <Field name="sort_order" label="Sort order" type="number"
+        value={value('sort_order', 0)} step="1" inputmode="numeric"
+        hint="Orders entries within the same year. Lower first." />
+    </div>
+
+    <div style="margin-top:0.5rem;">
+      <Toggle name="is_published" label="Published" checked={Boolean(value('is_published', false))}
+        hint="Unpublished entries do not appear on the public timeline." />
+    </div>
+  </div>
+
+  <div class="form__foot">
+    <button type="submit" class="btn">{submitLabel}</button>
+    <a class="btn btn--quiet" href="/admin/exhibitions">Cancel</a>
+  </div>
+</form>

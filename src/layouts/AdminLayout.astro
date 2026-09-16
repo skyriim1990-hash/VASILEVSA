@@ -1,0 +1,117 @@
+---
+/**
+ * ADMIN LAYOUT
+ *
+ * The frame every /admin page sits in. Separate from BaseLayout on purpose:
+ * BaseLayout carries the public site's SEO, structured data, scroll-reveal
+ * observer and global.css, none of which belong in a tool, and one of which —
+ * the sitemap-facing canonical tag — would be actively wrong here.
+ *
+ * `noindex, nofollow` is the first meta tag in the head. robots.txt asks
+ * crawlers not to visit; this tells the ones that visit anyway not to keep it.
+ */
+
+import '../styles/admin.css';
+import { ADMIN_NAV, isCurrent } from '../lib/admin/nav.js';
+import { adminLabel } from '../lib/admin/auth.js';
+
+const {
+  title,
+  lead = '',
+  /** false on the login screen, which has no session and no sidebar */
+  chrome = true,
+} = Astro.props;
+
+const user = Astro.locals.user ?? null;
+const pathname = Astro.url.pathname;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{title} — Vasilevsa admin</title>
+    <meta name="theme-color" content="#F7F6F2" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500&family=Instrument+Serif&display=swap"
+    />
+  </head>
+
+  <body class="admin">
+    {
+      chrome ? (
+        <>
+          <a class="admin__skip" href="#admin-main">
+            Skip to content
+          </a>
+
+          <div class="admin__shell">
+            <nav class="admin__nav" aria-label="Admin sections">
+              <a class="admin__brand" href="/admin">
+                Vasilevsa<span>.</span>
+                <small>Admin</small>
+              </a>
+
+              <ul class="admin__links" role="list">
+                {ADMIN_NAV.map((item) => (
+                  <li>
+                    <a
+                      class="admin__link"
+                      href={item.href}
+                      aria-current={isCurrent(item, pathname) ? 'page' : undefined}
+                    >
+                      {item.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+
+              <div class="admin__foot">
+                <p class="admin__who">
+                  {/* the identity is shown so it is obvious which account is
+                      writing — two people sharing one panel otherwise cannot
+                      tell whose session they are in */}
+                  {user ? adminLabel(user) : 'Not signed in'}
+                </p>
+
+                {/* POST, not a link. A GET that ends a session can be fired by
+                    any image tag on any page the admin happens to open. */}
+                <form method="POST" action="/admin/logout">
+                  <button type="submit" class="btn btn--quiet btn--small">
+                    Log out
+                  </button>
+                </form>
+              </div>
+            </nav>
+
+            <main class="admin__main" id="admin-main" tabindex="-1">
+              <header class="admin__head">
+                <div>
+                  <h1 class="admin__title">{title}</h1>
+                  {lead && <p class="admin__lead">{lead}</p>}
+                </div>
+
+                {Astro.slots.has('actions') && (
+                  <div class="admin__actions">
+                    <slot name="actions" />
+                  </div>
+                )}
+              </header>
+
+              <slot />
+            </main>
+          </div>
+        </>
+      ) : (
+        <slot />
+      )
+    }
+  </body>
+</html>

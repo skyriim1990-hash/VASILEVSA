@@ -1,0 +1,210 @@
+---
+/**
+ * /admin/auth/callback
+ *
+ * Where the recovery link in the email lands. Its one job is to turn whatever
+ * Supabase put in the URL into a session cookie, then forward to
+ * /admin/reset-password.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY THERE ARE THREE WAYS IN
+ * ---------------------------------------------------------------------------
+ * Supabase does not hand the credential back the same way every time, and the
+ * difference is not something this app chooses:
+ *
+ *   ?code=…          the PKCE flow, used when the reset was requested through
+ *                    /admin/forgot-password. Exchanged server-side against the
+ *                    code verifier cookie that request left behind.
+ *
+ *   ?token_hash=…    what a link built from the newer email template carries.
+ *                    Verified server-side and needs no cookie, so it survives
+ *                    being opened in a different browser.
+ *
+ *   #access_token=…  the implicit flow. This is what the Supabase dashboard's
+ *                    own "Send password recovery" button produces, and it is a
+ *                    fragment — the part of a URL browsers never transmit. The
+ *                    server cannot see it at all, so the page below renders,
+ *                    reads it in the browser and posts it back.
+ *
+ * Handling only the first would have made the panel's own flow work while the
+ * dashboard's button — the thing the owner reaches for first — kept failing,
+ * and failing on a blank page.
+ *
+ * ---------------------------------------------------------------------------
+ * WHAT THIS DOES NOT DO
+ * ---------------------------------------------------------------------------
+ * It does not sign anyone in beyond what the link already grants, and it does
+ * not take a destination from the URL. Everything that succeeds here goes to
+ * RESET_PATH, a constant. A callback that forwards to a path from its own
+ * query string is an open redirect wearing a login form.
+ */
+
+export const prerender = false;
+
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import Note from '../../../components/admin/Note.astro';
+import { createSupabaseServerClient } from '../../../lib/supabase/server.js';
+import { str } from '../../../lib/admin/forms.js';
+import { RESET_PATH, describeAuthError } from '../../../lib/admin/recovery.js';
+
+const configured = !Astro.locals.supabaseMissing;
+const params = Astro.url.searchParams;
+
+let error = '';
+
+if (!configured) {
+  error = 'Supabase is not configured on this server.';
+} else if (Astro.request.method === 'POST') {
+  /* The fragment, sent back by the script at the bottom of this page. */
+  const form = await Astro.request.formData();
+  const access_token = str(form, 'access_token');
+  const refresh_token = str(form, 'refresh_token');
+
+  if (!access_token || !refresh_token) {
+    error = 'That link did not carry a usable session. Ask for a new one.';
+  } else {
+    const supabase = createSupabaseServerClient(Astro);
+    const { error: authError } = await supabase.auth.setSession({ access_token, refresh_token });
+
+    if (authError) {
+      error = describeAuthError(authError);
+    } else {
+      return Astro.redirect(RESET_PATH, 303);
+    }
+  }
+} else {
+  /* Supabase reports a refused link in the query string rather than by status
+     code, and puts the readable half in error_description. */
+  const reported = params.get('error_description') || params.get('error');
+  const code = params.get('code');
+  const tokenHash = params.get('token_hash');
+
+  if (reported) {
+    error = describeAuthError({ message: reported });
+  } else if (code) {
+    const supabase = createSupabaseServerClient(Astro);
+    const { error: authError } = await supabase.auth.exchangeCodeForSession(code);
+
+    if (authError) {
+      /* Almost always the missing verifier — the link was opened somewhere
+         other than the browser that asked for it. describeAuthError names that
+         case specifically, because the fix is not "try again". */
+      error = describeAuthError(authError);
+    } else {
+      return Astro.redirect(RESET_PATH, 303);
+    }
+  } else if (tokenHash) {
+    const supabase = createSupabaseServerClient(Astro);
+
+    /* `type` is fixed rather than read from the URL. This route exists for one
+       purpose and an attacker-chosen type is a way to verify something else. */
+    const { error: authError } = await supabase.auth.verifyOtp({
+      type: 'recovery',
+      token_hash: tokenHash,
+    });
+
+    if (authError) {
+      error = describeAuthError(authError);
+    } else {
+      return Astro.redirect(RESET_PATH, 303);
+    }
+  }
+
+  /* Nothing in the query string and no error: the credential is in the
+     fragment. Fall through and let the browser hand it over. */
+}
+---
+
+<AdminLayout title="Opening your link" chrome={false}>
+  <div class="login">
+    <div class="login__box">
+      <h1 class="login__brand">
+        Vasilevsa<span>.</span>
+        <small>Password recovery</small>
+      </h1>
+
+      {error && <Note tone="error" text={error} />}
+
+      {
+        !error && (
+          <Note tone="ok" text="Checking your link…">
+            <noscript>
+              <p>
+                This last step needs JavaScript, because the part of the link that proves who you
+                are is never sent to the server. Enable it and reload, or request a new link from
+                the reset page — those links are completed on the server and work without it.
+              </p>
+            </noscript>
+          </Note>
+        )
+      }
+
+      {/* Filled in and submitted by the script below. Kept in the markup rather
+          than built in JavaScript so what gets posted is visible here.
+
+          Rendered only when nothing has gone wrong yet — its absence is what
+          stops the script from running on a page that is already reporting a
+          failure and reloading it into a loop. */}
+      {
+        !error && (
+          <form method="POST" hidden data-handoff>
+            <input type="hidden" name="access_token" data-access />
+            <input type="hidden" name="refresh_token" data-refresh />
+          </form>
+        )
+      }
+
+      <a class="login__back" href="/admin/forgot-password">Request a new link</a>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  /* Reads the fragment and hands it to the server, which is the only side that
+     can write the session cookie.
+
+     The fragment never left the browser on the way in, and this posts it in a
+     body rather than a query string so it does not end up in an access log on
+     the way back. */
+  const form = document.querySelector('[data-handoff]');
+  const access = document.querySelector('[data-access]');
+  const refresh = document.querySelector('[data-refresh]');
+
+  /** Reloads with the message in the query string, where the server renders
+      failures already, rather than styling a second message box in here. */
+  function report(message) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('error_description', message);
+    window.location.replace(url);
+  }
+
+  if (
+    form instanceof HTMLFormElement &&
+    access instanceof HTMLInputElement &&
+    refresh instanceof HTMLInputElement
+  ) {
+    const hash = new URLSearchParams(window.location.hash.slice(1));
+
+    const accessToken = hash.get('access_token');
+    const refreshToken = hash.get('refresh_token');
+    const reported = hash.get('error_description') || hash.get('error');
+
+    /* Strip it from the address bar before anything else. It stays in the page
+       either way, but this keeps it out of the visible URL, out of the back
+       history and out of anything a later navigation might carry it into. */
+    history.replaceState(null, '', window.location.pathname + window.location.search);
+
+    if (accessToken && refreshToken) {
+      access.value = accessToken;
+      refresh.value = refreshToken;
+      form.submit();
+    } else if (reported) {
+      report(reported);
+    } else {
+      /* No query parameters and no fragment either — the address was typed or
+         bookmarked rather than followed from an email. Saying so beats leaving
+         "Checking your link…" spinning against nothing. */
+      report('This page completes a recovery link and there was no link in the address.');
+    }
+  }
+</script>

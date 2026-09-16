@@ -1,0 +1,155 @@
+---
+/**
+ * /admin/settings
+ *
+ * What this panel can actually tell you about itself, and nothing else.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY THERE IS SO LITTLE HERE
+ * ---------------------------------------------------------------------------
+ * A settings page is where invented options accumulate — a site title that
+ * nothing reads, a "maintenance mode" switch wired to nothing, an analytics
+ * field for an account that does not exist. Every row below is either a fact
+ * read from somewhere real at render time, or an action that works.
+ *
+ * The site name, domain and contact endpoint are not editable because they are
+ * not in the database: they live in astro.config.mjs and src/i18n/ui.js and
+ * are compiled into a static build. A form that pretended to change them would
+ * be a form that lies. Where they are is stated instead.
+ */
+
+export const prerender = false;
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import Note from '../../components/admin/Note.astro';
+import { SUPABASE_URL } from '../../lib/supabase/env.js';
+import { adminLabel } from '../../lib/admin/auth.js';
+import { dashboardCounts } from '../../lib/admin/queries.js';
+import { BUCKETS } from '../../lib/supabase/storage.js';
+
+const supabase = Astro.locals.supabase;
+const user = Astro.locals.user;
+
+/* The error is kept, not discarded. These three numbers are the same counts
+   the dashboard shows, and a refused query returns zeros — "0 artworks" and
+   "could not read" look identical otherwise, and only one of them means the
+   archive is empty. */
+const { counts, error: countError } = await dashboardCounts(supabase);
+
+/* The project reference, not the key. The URL is public by design — it is in
+   every request the browser already makes — but the key is not printed here
+   or anywhere else in the interface. */
+const projectRef = SUPABASE_URL.replace(/^https?:\/\//, '').split('.')[0] ?? '';
+
+const dateFormat = new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeStyle: 'short' });
+
+const lastSignIn = user?.last_sign_in_at ? dateFormat.format(new Date(user.last_sign_in_at)) : '—';
+const createdAt = user?.created_at ? dateFormat.format(new Date(user.created_at)) : '—';
+---
+
+<AdminLayout title="Settings" lead="Account, connection and where the things that are not in the database live.">
+  <div class="panel">
+    <p class="panel__title">Account</p>
+
+    <dl class="dl">
+      <dt>Signed in as</dt>
+      <dd>{adminLabel(user)}</dd>
+
+      <dt>Role</dt>
+      <dd>Administrator — listed in <code>public.admin_users</code></dd>
+
+      <dt>Account created</dt>
+      <dd>{createdAt}</dd>
+
+      <dt>Last sign-in</dt>
+      <dd>{lastSignIn}</dd>
+    </dl>
+
+    <div class="form__foot" style="margin-top:1rem;">
+      <form method="POST" action="/admin/logout">
+        <button type="submit" class="btn btn--quiet">Log out</button>
+      </form>
+    </div>
+
+    <p class="field__hint" style="margin-top:0.75rem;">
+      To change the password, sign out and use <a href="/admin/forgot-password">Forgotten your
+      password?</a> — the link is emailed and saving a new password ends every
+      other session on the account. There is no in-place change here on purpose:
+      a form that rewrites the current login without re-proving who is at the
+      keyboard is worth stealing a session for.
+    </p>
+  </div>
+
+  <div class="panel">
+    <p class="panel__title">Connection</p>
+
+    <dl class="dl">
+      <dt>Supabase project</dt>
+      <dd><code>{projectRef}</code></dd>
+
+      <dt>Storage buckets</dt>
+      <dd>{Object.values(BUCKETS).join(', ')}</dd>
+
+      <dt>Credential in use</dt>
+      <dd>
+        Publishable key, acting as the signed-in user. Every read and write on
+        this page is filtered by Row Level Security.
+      </dd>
+
+      <dt>Service-role key</dt>
+      <dd>Not used anywhere in this project.</dd>
+    </dl>
+  </div>
+
+  <div class="panel">
+    <p class="panel__title">Content</p>
+
+    {countError && (
+      <Note tone="error" text={`These counts could not be read: ${countError.message}`} />
+    )}
+
+    <dl class="dl">
+      <dt>Artworks</dt>
+      <dd>{counts.artworks} total, {counts.published} published</dd>
+
+      <dt>Exhibitions</dt>
+      <dd>{counts.exhibitions}</dd>
+
+      <dt>Media files</dt>
+      <dd>{counts.media}</dd>
+    </dl>
+  </div>
+
+  <div class="panel">
+    <p class="panel__title">Not editable here</p>
+
+    <p style="margin:0 0 0.9rem; font-size:0.8125rem; color:var(--ink-soft);">
+      These are compiled into the static build rather than read from the
+      database, so changing them means editing a file and rebuilding. Listed so
+      the search does not start in this panel.
+    </p>
+
+    <dl class="dl">
+      <dt>Domain</dt>
+      <dd><code>astro.config.mjs</code> → <code>site</code>, and <code>public/robots.txt</code></dd>
+
+      <dt>Site copy</dt>
+      <dd><code>src/i18n/ui.js</code></dd>
+
+      <dt>Contact form</dt>
+      <dd><code>src/components/ContactForm.astro</code> → <code>endpoint</code></dd>
+
+      <dt>Colours and type</dt>
+      <dd><code>src/styles/global.css</code></dd>
+    </dl>
+  </div>
+
+  <Note tone="warn">
+    <p>
+      <b>The public site is a static build.</b> Publishing a work here changes
+      the database immediately, and the pages a visitor sees change the next
+      time the site is built and deployed. Until the build runs, the live site
+      shows what it showed before.
+    </p>
+  </Note>
+</AdminLayout>

@@ -1,0 +1,64 @@
+---
+/**
+ * /admin/works/new
+ *
+ * Handles its own POST and, on success, redirects to the edit page for the
+ * record it just made.
+ *
+ * The redirect is a 303 and not a rendered "saved" page on purpose: without it
+ * the browser's back button and reload both re-post the form, and a reload
+ * after creating a work would create a second one. Post-redirect-get is the
+ * fix, and it has the useful side effect of landing the editor on the page
+ * where the image can now be replaced.
+ */
+
+export const prerender = false;
+
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import ArtworkForm from '../../../components/admin/ArtworkForm.astro';
+import Note from '../../../components/admin/Note.astro';
+import { listCategories } from '../../../lib/admin/queries.js';
+import { createArtwork, readArtworkForm } from '../../../lib/admin/artworkForm.js';
+import { redirectWith } from '../../../lib/admin/forms.js';
+
+const supabase = Astro.locals.supabase;
+
+let errors = [];
+/* Populated on a failed POST so the form comes back filled in. Re-rendering it
+   empty would mean a mistyped year costs the editor every other field they
+   just wrote — and the file input, which no browser will let us refill. */
+let submitted = null;
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const result = await createArtwork(supabase, form);
+
+  if (result.id) {
+    return redirectWith(Astro, `/admin/works/${result.id}`, { m: 'created' });
+  }
+
+  errors = result.errors;
+  submitted = readArtworkForm(form, null).values;
+}
+
+const { data: categories } = await listCategories(supabase);
+---
+
+<AdminLayout
+  title="Add work"
+  lead="Nothing here is required except what you want to show. Empty fields render as marked placeholders on the public site, never as invented values."
+>
+  {errors.length > 0 && <Note tone="error" text="The work was not saved:" items={errors} />}
+
+  {errors.length > 0 && submitted && (
+    <Note tone="warn" text="Your text has been kept. The file, if you chose one, has to be selected again — browsers do not allow a file input to be refilled." />
+  )}
+
+  <ArtworkForm
+    artwork={submitted}
+    isNew={true}
+    categories={categories ?? []}
+    action="/admin/works/new"
+    submitLabel="Create work"
+  />
+</AdminLayout>

@@ -1,0 +1,982 @@
+/* ===========================================================================
+   ADMIN — stylesheet
+
+   Deliberately separate from global.css and loaded only by AdminLayout. The
+   public site's stylesheet is not touched by anything in this file, and no
+   public page ever downloads this one.
+
+   It borrows the palette and the two typefaces so the panel feels like part
+   of the same project, and borrows nothing else. The public site is an
+   exhibition — generous whitespace, slow reveals, a 12-column editorial grid.
+   A tool used for an hour at a time needs the opposite: dense rows, visible
+   affordances, no motion. Reusing the display type scale here would mean
+   scrolling past a 10rem heading to reach a form.
+   ======================================================================== */
+
+.admin {
+  /* re-declared rather than imported: this stylesheet stands alone, and a
+     token it needs should not depend on load order with global.css */
+  --paper: #f7f6f2;
+  --paper-deep: #efede7;
+  --paper-warm: #f2f0ea;
+  --surface: #ffffff;
+  --ink: #111111;
+  --ink-soft: #666666;
+  --ink-faint: #74706a;
+  --accent: #e86a2a;
+  --accent-ink: #b4501c;
+  --rule: #d8d6d0;
+  --rule-soft: #e7e5df;
+
+  /* 4.6:1 and 4.5:1 on paper — both clear AA for the small text they carry */
+  --danger: #9a2b1e;
+  --ok: #2f6b43;
+
+  --sans: 'Golos Text', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --serif: 'Instrument Serif', 'Prata', Georgia, serif;
+
+  --admin-nav-w: 216px;
+  --radius: 2px;
+
+  min-height: 100vh;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.admin *,
+.admin *::before,
+.admin *::after {
+  box-sizing: border-box;
+}
+
+/* ------------------------------------------------------------------ focus */
+
+/* One ring for everything focusable. :focus-visible so a mouse click on a
+   button does not leave a ring behind, while Tab always does. */
+.admin :focus-visible {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------------ shell */
+
+.admin__skip {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 0.7rem 1rem;
+  background: var(--ink);
+  color: var(--paper);
+  text-decoration: none;
+}
+
+.admin__skip:focus {
+  left: 0;
+}
+
+.admin__shell {
+  display: grid;
+  grid-template-columns: var(--admin-nav-w) minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+/* ------------------------------------------------------------------- nav */
+
+.admin__nav {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 0 1rem;
+  border-right: 1px solid var(--rule);
+  background: var(--paper-deep);
+}
+
+.admin__brand {
+  padding: 0 1.25rem 1.4rem;
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.admin__brand span {
+  color: var(--accent);
+}
+
+.admin__brand small {
+  display: block;
+  margin-top: 0.3rem;
+  font-family: var(--sans);
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.admin__links {
+  flex: 1;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+}
+
+.admin__link {
+  display: block;
+  padding: 0.6rem 1.25rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+}
+
+.admin__link:hover {
+  color: var(--ink);
+  background: var(--paper-warm);
+}
+
+/* The active item carries a rule as well as the colour, so it is not
+   signalled by colour alone — the same rule the public navigation follows. */
+.admin__link[aria-current='page'] {
+  color: var(--accent-ink);
+  border-left-color: var(--accent);
+  background: var(--paper);
+}
+
+.admin__foot {
+  padding: 1rem 1.25rem 0;
+  border-top: 1px solid var(--rule);
+}
+
+.admin__who {
+  margin: 0 0 0.6rem;
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  color: var(--ink-faint);
+  word-break: break-word;
+}
+
+/* ------------------------------------------------------------------ main */
+
+.admin__main {
+  min-width: 0;
+  padding: 2rem clamp(1.25rem, 3vw, 2.5rem) 4rem;
+}
+
+.admin__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--ink);
+}
+
+.admin__title {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(1.7rem, 3vw, 2.3rem);
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.admin__lead {
+  margin: 0.35rem 0 0;
+  max-width: 62ch;
+  font-size: 0.875rem;
+  color: var(--ink-soft);
+}
+
+.admin__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* ---------------------------------------------------------------- buttons */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--sans);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  /* 44px is the comfortable touch target; the panel is used on a phone too */
+  min-height: 40px;
+}
+
+.btn:hover {
+  background: #000;
+  border-color: #000;
+}
+
+.btn--quiet {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--rule);
+}
+
+.btn--quiet:hover {
+  background: var(--paper-warm);
+  border-color: var(--ink);
+}
+
+.btn--danger {
+  background: transparent;
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.btn--danger:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
+.btn--small {
+  padding: 0.35rem 0.6rem;
+  min-height: 32px;
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+}
+
+.btn[disabled],
+.btn[aria-disabled='true'] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ------------------------------------------------------------------ notes */
+
+.note {
+  display: flex;
+  gap: 0.6rem;
+  padding: 0.8rem 1rem;
+  margin-bottom: 1.5rem;
+  border-left: 2px solid var(--ok);
+  background: var(--surface);
+  font-size: 0.8125rem;
+  color: var(--ink);
+}
+
+.note--error {
+  border-left-color: var(--danger);
+}
+
+.note--warn {
+  border-left-color: var(--accent);
+}
+
+.note p {
+  margin: 0;
+}
+
+.note ul {
+  margin: 0.4rem 0 0;
+  padding-left: 1.1rem;
+}
+
+/* ----------------------------------------------------------------- panels */
+
+.panel {
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+}
+
+.panel__title {
+  margin: 0 0 1rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* ------------------------------------------------------------------ stats */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  gap: 1px;
+  margin-bottom: 1.5rem;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+}
+
+.stat {
+  padding: 1.1rem 1.25rem;
+  background: var(--surface);
+}
+
+.stat__n {
+  display: block;
+  font-family: var(--serif);
+  font-size: 2.4rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat__label {
+  display: block;
+  margin-top: 0.45rem;
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* ------------------------------------------------------------------ forms */
+
+.form {
+  display: grid;
+  gap: 1.25rem;
+}
+
+/* Two columns on a wide screen, one below. minmax(0,…) rather than 1fr so a
+   long value in a field cannot push the grid wider than its container — the
+   usual cause of horizontal overflow in a dense form. */
+.form__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+  gap: 1rem 1.25rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.field--wide {
+  grid-column: 1 / -1;
+}
+
+.field__label {
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.field__req {
+  color: var(--accent-ink);
+}
+
+.field__hint {
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+}
+
+.admin input[type='text'],
+.admin input[type='email'],
+.admin input[type='password'],
+.admin input[type='number'],
+.admin input[type='url'],
+.admin input[type='date'],
+.admin input[type='search'],
+.admin input[type='file'],
+.admin textarea,
+.admin select {
+  width: 100%;
+  max-width: 100%;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.admin textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+
+.admin input:hover,
+.admin textarea:hover,
+.admin select:hover {
+  border-color: var(--ink-faint);
+}
+
+.admin input[aria-invalid='true'],
+.admin textarea[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+/* Checkboxes read left-to-right as a sentence, with the whole row clickable
+   through the wrapping <label>. */
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.5rem 0;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.check input {
+  width: 1.05rem;
+  height: 1.05rem;
+  margin: 0.2rem 0 0;
+  accent-color: var(--accent-ink);
+  flex: none;
+}
+
+.check__text b {
+  display: block;
+  font-weight: 500;
+}
+
+.check__text span {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+}
+
+.form__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+}
+
+.form__foot--split {
+  justify-content: space-between;
+}
+
+/* For a footer that sits outside its <form> rather than inside it.
+
+   It has to sit outside wherever a delete confirmation shares the row: the
+   confirmation carries its own <form>, and HTML does not allow one form inside
+   another — the parser silently drops the inner one and reparents its buttons
+   onto the outer form, so "delete" arrives at the server as whatever the outer
+   form was for. The button is tied back to its form with the `form` attribute.
+
+   The margin replaces the grid gap it no longer inherits from .form. */
+.form__foot--detached {
+  margin-top: 1.25rem;
+}
+
+/* ------------------------------------------------------------------ image */
+
+.imagefield {
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.imagefield__preview {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  border: 1px solid var(--rule);
+  background: var(--paper-warm);
+  overflow: hidden;
+}
+
+.imagefield__preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.imagefield__empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 0.5rem;
+  text-align: center;
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.imagefield__body {
+  display: grid;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.imagefield__meta {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+  word-break: break-word;
+}
+
+/* ----------------------------------------------------------------- tables */
+
+/* The scroller, not the table, is what may overflow. Without this a wide row
+   widens the page itself and every breakpoint gets a horizontal scrollbar. */
+.tablewrap {
+  overflow-x: auto;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  -webkit-overflow-scrolling: touch;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.table th,
+.table td {
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--paper-deep);
+  border-bottom: 1px solid var(--rule);
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.table tbody tr:hover {
+  background: var(--paper-warm);
+}
+
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.table__thumb {
+  width: 46px;
+  height: 58px;
+  object-fit: cover;
+  display: block;
+  background: var(--paper-warm);
+  border: 1px solid var(--rule-soft);
+}
+
+.table__thumb--empty {
+  display: grid;
+  place-items: center;
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+  color: var(--ink-faint);
+}
+
+.table__title {
+  font-weight: 500;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.table__title:hover {
+  text-decoration: underline;
+}
+
+.table__sub {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.6875rem;
+  color: var(--ink-faint);
+}
+
+.table__actions {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: flex-end;
+  white-space: nowrap;
+}
+
+.table__num {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* ------------------------------------------------------------------ flags */
+
+/* Text, not a coloured dot. A status readable only by colour is a status some
+   readers cannot read. */
+.flag {
+  display: inline-block;
+  padding: 0.15rem 0.4rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  font-size: 0.5625rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.flag--on {
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+.flag--accent {
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+/* ---------------------------------------------------------------- filters */
+
+.filterbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+}
+
+.filterbar .field {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+.filterbar__go {
+  flex: none;
+}
+
+/* ------------------------------------------------------------------ pager */
+
+.pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+}
+
+.pager__links {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* ------------------------------------------------------------------- grid */
+
+.mediagrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(190px, 100%), 1fr));
+  gap: 1rem;
+}
+
+.mediacard {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+}
+
+.mediacard__fig {
+  aspect-ratio: 4 / 3;
+  background: var(--paper-warm);
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.mediacard__fig img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.mediacard__body {
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.mediacard__path {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.6875rem;
+  word-break: break-all;
+  color: var(--ink-soft);
+}
+
+.mediacard__meta {
+  color: var(--ink-faint);
+}
+
+/* ------------------------------------------------------------------ misc */
+
+.empty {
+  padding: 3rem 1.25rem;
+  text-align: center;
+  border: 1px dashed var(--rule);
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: 0.875rem;
+}
+
+.stack {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.inline {
+  display: inline;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.dl {
+  display: grid;
+  grid-template-columns: minmax(120px, auto) minmax(0, 1fr);
+  gap: 0.5rem 1rem;
+  margin: 0;
+  font-size: 0.8125rem;
+}
+
+.dl dt {
+  font-size: 0.625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  padding-top: 0.15rem;
+}
+
+.dl dd {
+  margin: 0;
+  word-break: break-word;
+}
+
+/* ------------------------------------------------------------------ login */
+
+.login {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem 1.25rem;
+  background: var(--paper);
+}
+
+.login__box {
+  width: 100%;
+  max-width: 380px;
+}
+
+.login__brand {
+  margin: 0 0 1.75rem;
+  font-family: var(--serif);
+  font-size: 1.9rem;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.login__brand span {
+  color: var(--accent);
+}
+
+.login__brand small {
+  display: block;
+  margin-top: 0.5rem;
+  font-family: var(--sans);
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.login__form {
+  display: grid;
+  gap: 1rem;
+  padding: 1.5rem;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+}
+
+.login__form .btn {
+  width: 100%;
+}
+
+.login__back {
+  display: block;
+  margin-top: 1.25rem;
+  font-size: 0.6875rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* A sentence rather than a control: the "forgot your password" offer, and the
+   caption naming the account a new password is about to be set for. Set in
+   normal case because .login__back is the uppercase step-back link and two
+   uppercase links under one form read as two ways out of it. */
+.login__aside {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.login__aside a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+/* ------------------------------------------------------------- responsive */
+
+/* Below 900px the sidebar becomes a horizontal strip above the content. No
+   off-canvas drawer: a scrolling row of eight items needs no JavaScript, and
+   a panel that fails when a script fails is a panel that locks the owner out
+   of their own site. */
+@media (max-width: 900px) {
+  .admin__shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin__nav {
+    position: static;
+    height: auto;
+    flex-direction: column;
+    padding: 1rem 0 0.5rem;
+    border-right: 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .admin__brand {
+    padding: 0 1.25rem 0.9rem;
+  }
+
+  .admin__links {
+    display: flex;
+    gap: 0.25rem;
+    margin: 0.5rem 0 0;
+    padding: 0 0.75rem 0.5rem;
+    overflow-x: auto;
+    /* the strip scrolls; the page must not */
+    scrollbar-width: thin;
+  }
+
+  .admin__link {
+    padding: 0.5rem 0.7rem;
+    white-space: nowrap;
+    border-left: 0;
+    border-bottom: 2px solid transparent;
+  }
+
+  .admin__link[aria-current='page'] {
+    border-left: 0;
+    border-bottom-color: var(--accent);
+  }
+
+  .admin__foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1.25rem;
+  }
+
+  .admin__who {
+    margin: 0;
+    flex: 1 1 auto;
+  }
+
+  .admin__main {
+    padding: 1.5rem 1.25rem 3rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .imagefield {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .imagefield__preview {
+    max-width: 200px;
+  }
+
+  .admin__head {
+    align-items: flex-start;
+  }
+
+  .admin__actions .btn {
+    flex: 1 1 auto;
+  }
+
+  .dl {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.15rem;
+  }
+
+  .dl dd {
+    margin-bottom: 0.6rem;
+  }
+}
+
+/* Nothing here animates, so there is nothing to switch off — except the
+   scroll behaviour inherited from the document. */
+@media (prefers-reduced-motion: reduce) {
+  .admin * {
+    scroll-behavior: auto !important;
+  }
+}

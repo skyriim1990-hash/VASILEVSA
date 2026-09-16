@@ -1,0 +1,39 @@
+---
+/**
+ * NOTE
+ *
+ * The strip that reports what just happened, or what went wrong.
+ *
+ * role="status" for a success, role="alert" for a failure. The distinction is
+ * not decorative: alert interrupts a screen reader, status waits for a pause.
+ * A saved confirmation should not cut someone off mid-sentence; a refused save
+ * should.
+ */
+
+const { tone = 'ok', text = '', items = [] } = Astro.props;
+
+const hasContent = Boolean(text) || items.length > 0 || Astro.slots.has('default');
+---
+
+{
+  hasContent && (
+    <div
+      class:list={['note', tone === 'error' && 'note--error', tone === 'warn' && 'note--warn']}
+      role={tone === 'error' ? 'alert' : 'status'}
+    >
+      <div>
+        {text && <p>{text}</p>}
+
+        {items.length > 0 && (
+          <ul>
+            {items.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        )}
+
+        <slot />
+      </div>
+    </div>
+  )
+}

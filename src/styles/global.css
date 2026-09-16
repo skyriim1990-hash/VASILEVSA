@@ -1,0 +1,571 @@
+/* ===========================================================================
+   ALEXANDRE VASSILEV-VASILEVSA
+   Global stylesheet — tokens, typography, layout, shared components.
+
+   The colour of this site is meant to come from the paintings. Everything
+   here stays paper, ink and one restrained orange.
+   ======================================================================== */
+
+/* ---------------------------------------------------------------- tokens */
+
+:root {
+  /* Palette.
+     Contrast ratios below are measured against --paper (#F7F6F2).
+
+     --ink        #111111   18.6 : 1   body and headings
+     --ink-soft   #666666    5.3 : 1   secondary text            AA
+     --ink-faint  #74706A    4.6 : 1   tertiary text, captions   AA
+     --accent     #E86A2A    3.0 : 1   LARGE display marks only
+     --accent-ink #B4501C    4.7 : 1   accent at text size       AA
+
+     The brief's orange is kept exactly as specified for the display marks
+     it was chosen for — the period after the name, the × in Art × Sport,
+     the hairline rules. At 11px it only reaches 3:1, so anything set in the
+     accent at text size uses --accent-ink, a darker step of the same hue.
+     Same colour language, readable at small sizes. */
+  /* Four steps of paper, lightest to deepest. --paper is the page; --warm is
+     the field a placeholder is drawn on; --deep and --tint are the two
+     section tones that let one page read as bands rather than as one flat
+     sheet.
+
+     Measured against --paper: --deep is 1.16:1, --tint is 1.28:1. Enough to
+     see where one section ends, not enough to turn a page into a stack of
+     panels, and never enough to compete with a painting.
+
+     These are past the point where the grey text tokens hold up: --ink-soft
+     falls to 4.07:1 on --tint and --ink-faint to 3.49:1, both under AA. Any
+     section carrying one of these tones therefore also carries .on-tone,
+     which steps both greys darker. See that rule further down. */
+  --paper: #f7f6f2;
+  --paper-warm: #f2f0ea;
+  --paper-deep: #e7e5df;
+  --paper-tint: #dcd9d1;
+  --ink: #111111;
+  --ink-soft: #666666;
+  --ink-faint: #74706a;
+  --accent: #e86a2a;
+  --accent-ink: #b4501c;
+  --rule: #d8d6d0;
+
+  /* Text set directly on a placeholder's tinted field rather than on paper.
+     The tints run to #E6E4DC, where --ink-faint drops to 3.9:1; this clears
+     5.2:1 against the darkest of them. */
+  --ink-on-tint: #5f5c56;
+
+  /* Type families.
+     Instrument Serif has no Cyrillic; Prata follows it in the stack and
+     picks up the Bulgarian headings, so they are never left to whatever
+     serif the operating system happens to supply. */
+  --serif: 'Instrument Serif', 'Prata', 'Iowan Old Style', Georgia, serif;
+  --sans: 'Golos Text', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+
+  /* fluid type scale */
+  --fs-display: clamp(3.1rem, 10.5vw, 10rem);
+  --fs-h1: clamp(2.5rem, 6.4vw, 5.5rem);
+  --fs-h2: clamp(1.9rem, 4vw, 3.5rem);
+  --fs-h3: clamp(1.35rem, 2.1vw, 1.95rem);
+  --fs-lead: clamp(1.0625rem, 1.25vw, 1.3125rem);
+  --fs-body: clamp(0.95rem, 0.95vw, 1.0625rem);
+  --fs-small: 0.8125rem;
+  --fs-micro: 0.6875rem;
+
+  /* spacing */
+  --gutter: clamp(1.25rem, 4vw, 4.5rem);
+  --gap: clamp(1rem, 1.8vw, 2rem);
+  --section: clamp(5.5rem, 11vw, 12rem);
+  --section-tight: clamp(3.5rem, 7vw, 7rem);
+  --measure: 34ch;
+  --measure-wide: 46ch;
+
+  /* structure */
+  --max: 1720px;
+  --header-h: clamp(64px, 7vw, 88px);
+
+  /* motion */
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur: 900ms;
+}
+
+/* ---------------------------------------------------------------- reset */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  /* the header is sticky, so anchored targets must clear it rather than
+     land underneath — this is what the skip link depends on */
+  scroll-padding-top: calc(var(--header-h) + 1rem);
+}
+
+body,
+h1,
+h2,
+h3,
+h4,
+p,
+figure,
+blockquote,
+dl,
+dd,
+ul,
+ol {
+  margin: 0;
+}
+
+ul[class],
+ol[class] {
+  list-style: none;
+  padding: 0;
+}
+
+img,
+picture,
+svg,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+/* ---------------------------------------------------------------- base */
+
+html,
+body {
+  /* the single most common cause of horizontal scroll on editorial layouts */
+  overflow-x: clip;
+  max-width: 100%;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: var(--fs-body);
+  font-weight: 400;
+  line-height: 1.62;
+  letter-spacing: 0.003em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  /* the darker step, so selected text stays legible against it */
+  background: var(--accent-ink);
+  color: var(--paper);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* focus indicators are non-text UI and need 3:1 — the display orange only
+   reaches 3.0, so the ring uses the darker step with a second contrasting
+   outline behind it for dark and light surfaces alike */
+:focus-visible {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 3px;
+}
+
+/* ---------------------------------------------------------------- type */
+
+.display,
+.serif {
+  font-family: var(--serif);
+  font-weight: 400;
+  letter-spacing: -0.012em;
+}
+
+.display {
+  font-size: var(--fs-display);
+  line-height: 0.9;
+  letter-spacing: -0.028em;
+}
+
+h1,
+.h1 {
+  font-family: var(--serif);
+  font-size: var(--fs-h1);
+  font-weight: 400;
+  line-height: 0.98;
+  letter-spacing: -0.022em;
+}
+
+h2,
+.h2 {
+  font-family: var(--serif);
+  font-size: var(--fs-h2);
+  font-weight: 400;
+  line-height: 1.04;
+  letter-spacing: -0.016em;
+}
+
+h3,
+.h3 {
+  font-family: var(--serif);
+  font-size: var(--fs-h3);
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+.lead {
+  font-size: var(--fs-lead);
+  line-height: 1.5;
+  color: var(--ink);
+  max-width: var(--measure-wide);
+}
+
+.body {
+  max-width: var(--measure-wide);
+  color: var(--ink-soft);
+}
+
+.body + .body {
+  margin-top: 1.15em;
+}
+
+.body strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+/* the small uppercase sans used for every label, caption and metadatum */
+.micro {
+  font-family: var(--sans);
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.micro--ink {
+  color: var(--ink);
+}
+
+.micro--accent {
+  color: var(--accent-ink);
+}
+
+/* The period after the wordmark. At 11px in the header and footer it is
+   text-sized and takes the readable step; the two display-sized uses —
+   the homepage name and the Art × Sport title — override this back to the
+   full-strength accent in their own stylesheets. */
+.dot {
+  color: var(--accent-ink);
+}
+
+.amp {
+  font-family: var(--serif);
+  font-style: italic;
+}
+
+/* ---------------------------------------------------------------- layout */
+
+.shell {
+  width: 100%;
+  max-width: var(--max);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--gap);
+}
+
+.section {
+  padding-block: var(--section);
+}
+
+.section--tight {
+  padding-block: var(--section-tight);
+}
+
+/* ---------------------------------------------------------------- on-tone */
+
+/* Goes on any section that sits on --paper-deep or --paper-tint.
+
+   The two grey text tokens are set against --paper. On the deepest tone
+   --ink-soft measures 4.07:1 and --ink-faint 3.49:1, both below the 4.5:1 a
+   body or caption needs. Rather than lighten the tones back to where the
+   greys happen to work, the greys step down here: redefining the variables
+   on the section means every descendant inherits the corrected value without
+   a single component knowing which background it landed on.
+
+   Checked against --paper-tint, the worst case:
+     --ink-soft    #55524c   5.52 : 1
+     --ink-faint   #5f5c56   4.72 : 1
+     --accent-ink  #954014   4.97 : 1
+   On the lighter --paper-deep they sit higher still. --ink itself is 18:1 on
+   paper and 15:1 here, so headings are untouched.
+
+   --rule is not a contrast case — it draws hairlines and the decorative
+   middot between an artwork's metadata, neither of which is text. It steps
+   with the rest for a different reason: at #d8d6d0 it measured 1.34:1 on
+   paper and 1.14:1 on a tone, which is the difference between a faint mark
+   and no mark at all. #c9c6be restores 1.34:1, so a separator carries the
+   same weight wherever it lands. */
+.on-tone {
+  --ink-soft: #55524c;
+  --ink-faint: #5f5c56;
+  --accent-ink: #954014;
+  --rule: #c9c6be;
+}
+
+.rule {
+  height: 1px;
+  background: var(--rule);
+  border: 0;
+  width: 100%;
+}
+
+/* section heading: micro label + hairline, mirrors the reference's header rule */
+.sec-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--gap);
+  padding-bottom: 1.1rem;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: clamp(2rem, 4vw, 3.5rem);
+}
+
+.sec-head__note {
+  color: var(--ink-soft);
+  font-size: var(--fs-small);
+  text-align: right;
+  max-width: 32ch;
+}
+
+/* ---------------------------------------------------------------- links */
+
+/* text link with a rule that draws itself in on hover */
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7em;
+  position: relative;
+  padding-bottom: 0.35em;
+  color: var(--ink);
+  transition: color 400ms var(--ease);
+}
+
+.link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--rule);
+}
+
+.link::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 1px;
+  width: 100%;
+  background: var(--accent-ink);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 600ms var(--ease);
+  z-index: 1;
+}
+
+.link:hover,
+.link:focus-visible {
+  color: var(--accent-ink);
+}
+
+.link:hover::before,
+.link:focus-visible::before {
+  transform: scaleX(1);
+}
+
+.link__arrow {
+  width: 2.4em;
+  height: 1px;
+  background: currentColor;
+  position: relative;
+  flex: none;
+  transition: width 500ms var(--ease);
+}
+
+.link__arrow::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-top: 1px solid currentColor;
+  border-right: 1px solid currentColor;
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.link:hover .link__arrow,
+.link:focus-visible .link__arrow {
+  width: 3.4em;
+}
+
+/* ---------------------------------------------------------------- reveal */
+
+/*
+  Entrance animations.
+
+  Everything here is gated behind `.js`, a class the head script adds before
+  first paint. The hidden state therefore only exists when the script that
+  un-hides it is running. Without JavaScript — or if the bundle fails, or an
+  IntersectionObserver never fires — the page renders as plain, visible
+  content instead of a blank sheet of paper.
+
+  No `will-change`: these selectors match up to ~40 nodes per page, and
+  promoting every one to its own compositor layer for the whole session
+  costs more than the transition saves.
+*/
+.reveal {
+  transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+
+.js .reveal {
+  opacity: 0;
+  transform: translateY(22px);
+}
+
+.js .reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* a light stagger so a group of items does not arrive as one block */
+.reveal[data-delay='1'] { transition-delay: 90ms; }
+.reveal[data-delay='2'] { transition-delay: 180ms; }
+.reveal[data-delay='3'] { transition-delay: 270ms; }
+.reveal[data-delay='4'] { transition-delay: 360ms; }
+
+/* type reveal: the line slides up from behind a mask */
+.reveal-line {
+  display: block;
+  overflow: hidden;
+}
+
+.reveal-line > span {
+  display: block;
+  transition: transform 1100ms var(--ease);
+}
+
+.js .reveal-line > span {
+  transform: translateY(105%);
+}
+
+.js .is-in .reveal-line > span,
+.js .reveal-line.is-in > span {
+  transform: none;
+}
+
+.reveal-line[data-delay='1'] > span { transition-delay: 100ms; }
+.reveal-line[data-delay='2'] > span { transition-delay: 200ms; }
+.reveal-line[data-delay='3'] > span { transition-delay: 300ms; }
+
+/* -------------------------------------------------------- disclosure note */
+
+/* The footnote that states, on every page carrying them, that the marked
+   placeholders are not works by the artist. Quiet, but never hidden. */
+/* the top padding matters on About, where the note follows a full-bleed
+   tinted band that ends flush and would otherwise crowd it */
+.disclosure {
+  padding-block: clamp(2rem, 4vw, 3.5rem) clamp(3rem, 6vw, 5rem);
+}
+
+.disclosure__text {
+  max-width: 68ch;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rule);
+  font-family: var(--sans);
+  font-size: var(--fs-micro);
+  line-height: 1.7;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+}
+
+/* ---------------------------------------------------------------- a11y */
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 200;
+  padding: 0.9rem 1.4rem;
+  background: var(--ink);
+  color: var(--paper);
+  transform: translateY(-120%);
+  transition: transform 250ms var(--ease);
+}
+
+.skip:focus {
+  transform: none;
+}
+
+/* the skip target is only focusable programmatically — it should not draw
+   a focus ring around the entire page when it receives focus */
+main:focus {
+  outline: none;
+}
+
+/* ---------------------------------------------------------------- motion */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* these must outweigh the `.js`-scoped hidden state above */
+  .js .reveal {
+    opacity: 1;
+    transform: none;
+  }
+
+  .js .reveal-line > span {
+    transform: none;
+  }
+}

@@ -1,0 +1,141 @@
+---
+import '../styles/global.css';
+import Navigation from '../components/Navigation.astro';
+import Footer from '../components/Footer.astro';
+import { useTranslations } from '../i18n/utils.js';
+
+const {
+  lang = 'en',
+  title,
+  description,
+  /** page-level flag so the homepage can suppress its own name in the title */
+  bare = false,
+} = Astro.props;
+
+const t = useTranslations(lang);
+const pageTitle = bare ? t('meta.title') : `${title} — ${t('site.name')}`;
+const metaDescription = description || t('meta.description');
+
+const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
+
+/* No og:image is emitted yet. Social platforms do not render SVG previews,
+   and there is no photography to build a real one from — an image tag that
+   resolves to nothing is worse than none at all. Once a 1200×630 JPG or PNG
+   exists at /og-image.jpg, set this and the two tags below light up. */
+const ogImage = '';
+
+/* Structured data: only facts that were actually supplied. No awards,
+   no representation, no exhibition claims, no social profiles. */
+const personSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: 'Alexandre Vassilev-Vasilevsa',
+  jobTitle: 'Contemporary Artist',
+  nationality: 'Bulgarian',
+  url: canonical.origin,
+  address: {
+    '@type': 'PostalAddress',
+    addressLocality: 'London',
+    addressCountry: 'GB',
+  },
+  knowsAbout: [
+    'Contemporary Painting',
+    'Abstract Painting',
+    'Figurative Painting',
+    'Action Painting',
+  ],
+};
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={metaDescription} />
+    <link rel="canonical" href={canonical.href} />
+
+    <!-- Open Graph / social -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Alexandre Vassilev-Vasilevsa" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={metaDescription} />
+    <meta property="og:url" content={canonical.href} />
+    <meta property="og:locale" content="en_GB" />
+    {ogImage && <meta property="og:image" content={new URL(ogImage, Astro.site ?? Astro.url.origin).href} />}
+    <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={metaDescription} />
+    {ogImage && <meta name="twitter:image" content={new URL(ogImage, Astro.site ?? Astro.url.origin).href} />}
+
+    <meta name="theme-color" content="#F7F6F2" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+    <!--
+      Marks the document as scripted before the first paint. Every entrance
+      animation hides its element behind this class, so the hidden state only
+      exists when the script that reveals it is actually running. Without
+      JavaScript the site renders as ordinary visible content rather than a
+      blank page. Inline and in the head on purpose: any later and the
+      un-animated content would flash first.
+    -->
+    <script is:inline>
+      document.documentElement.classList.add('js');
+    </script>
+
+    <!--
+      Type: one editorial display serif, one neutral grotesque.
+
+      Instrument Serif carries the Latin display and has no Cyrillic, so
+      Prata — a didone of the same temperament — sits behind it in the stack
+      for the Bulgarian pages. Golos Text covers both scripts on its own, so
+      body copy never changes face mid-sentence around a Latin term.
+
+      Each subset ships with its own unicode-range, so an English page never
+      downloads the Cyrillic files and vice versa.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500&family=Instrument+Serif:ital@0;1&family=Prata&display=swap"
+    />
+
+    <script type="application/ld+json" set:html={JSON.stringify(personSchema)} />
+  </head>
+
+  <body>
+    <a class="skip" href="#main">{t('nav.skip')}</a>
+    <Navigation lang={lang} />
+    <!-- tabindex="-1" so the skip link actually moves focus here; without it
+         several browsers scroll but leave focus back in the header -->
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+    <Footer lang={lang} />
+
+    <script>
+      /* Reveal on scroll. One observer for the whole document, unobserving
+         each element after it lands — nothing stays subscribed. */
+      const items = document.querySelectorAll('.reveal, .reveal-line');
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (reduced || !('IntersectionObserver' in window)) {
+        items.forEach((el) => el.classList.add('is-in'));
+      } else {
+        const io = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (!entry.isIntersecting) continue;
+              entry.target.classList.add('is-in');
+              io.unobserve(entry.target);
+            }
+          },
+          { rootMargin: '0px 0px -8% 0px', threshold: 0.08 }
+        );
+        items.forEach((el) => io.observe(el));
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,381 @@
+---
+/**
+ * /admin/media
+ *
+ * Every file in the three buckets, with what uses it.
+ *
+ * ---------------------------------------------------------------------------
+ * THE USE COUNT IS THE REASON THIS PAGE EXISTS
+ * ---------------------------------------------------------------------------
+ * Deleting an image that three artworks point at is the one mistake here that
+ * is both easy to make and impossible to undo. Every card reads its reference
+ * count from public.media_usage and says what would break; a file that is in
+ * use needs a second, differently worded confirmation before it will go.
+ *
+ * The foreign keys are ON DELETE SET NULL, so even the forced delete detaches
+ * rather than cascades — the artwork survives and falls back to the marked
+ * placeholder it had before any photograph existed.
+ */
+
+export const prerender = false;
+
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import Note from '../../../components/admin/Note.astro';
+import Field from '../../../components/admin/Field.astro';
+import Pager from '../../../components/admin/Pager.astro';
+import ConfirmAction from '../../../components/admin/ConfirmAction.astro';
+import { listMedia, mediaUsage, updateMedia } from '../../../lib/admin/queries.js';
+import { removeMedia, uploadImage, formatBytes } from '../../../lib/admin/media.js';
+import { publicUrl, BUCKETS } from '../../../lib/supabase/storage.js';
+import { redirectWith, messageFor, isErrorCode, isUuid, str, bool, intOrNull } from '../../../lib/admin/forms.js';
+
+const PER_PAGE = 24;
+
+const supabase = Astro.locals.supabase;
+let errors = [];
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const action = str(form, '_action');
+
+  if (action === 'upload') {
+    const { error } = await uploadImage(supabase, {
+      file: form.get('image'),
+      bucket: str(form, 'bucket') || 'artworks',
+      alt: str(form, 'alt'),
+      caption: str(form, 'caption'),
+      width: intOrNull(form, 'image_width'),
+      height: intOrNull(form, 'image_height'),
+      name: str(form, 'name'),
+    });
+
+    if (!error) return redirectWith(Astro, '/admin/media', { m: 'uploaded' });
+    errors = [error];
+  } else {
+    const id = str(form, 'id');
+    if (!isUuid(id)) return redirectWith(Astro, '/admin/media', { m: 'not-found' });
+
+    if (action === 'delete') {
+      /* `force` comes from the second confirmation, which is only rendered on
+         a card that reported a non-zero use count. Without it removeMedia
+         refuses and reports how many records would be affected. */
+      const force = bool(form, 'force');
+      const { ok, error, inUse } = await removeMedia(supabase, id, { force });
+
+      if (ok) return redirectWith(Astro, '/admin/media', { m: 'media-deleted' });
+
+      if (inUse > 0) return redirectWith(Astro, '/admin/media', { m: 'delete-blocked' });
+
+      errors = [error];
+    } else if (action === 'save') {
+      const { error } = await updateMedia(supabase, id, {
+        alt: str(form, 'alt'),
+        caption: str(form, 'caption'),
+      });
+
+      if (!error) return redirectWith(Astro, '/admin/media', { m: 'media-saved' });
+      errors = [error.message];
+    }
+  }
+}
+
+const params = Astro.url.searchParams;
+const bucket = params.get('bucket') ?? '';
+const search = (params.get('q') ?? '').trim();
+const page = Math.max(1, Number.parseInt(params.get('page') ?? '1', 10) || 1);
+
+const { data: files, count, error } = await listMedia(supabase, {
+  bucket,
+  search,
+  page,
+  perPage: PER_PAGE,
+});
+
+const usage = await mediaUsage(supabase, (files ?? []).map((f) => f.id));
+
+const total = count ?? 0;
+const code = params.get('m') ?? '';
+const message = messageFor(code);
+
+const bucketOptions = [
+  { value: '', label: 'All buckets' },
+  ...Object.values(BUCKETS).map((b) => ({ value: b, label: b })),
+];
+
+const dateFormat = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium' });
+
+/** "2 artworks, 1 exhibition" — or '' when nothing points at it. */
+function usedBy(row) {
+  if (!row) return '';
+
+  const parts = [];
+  if (row.artwork_count) parts.push(`${row.artwork_count} artwork${row.artwork_count > 1 ? 's' : ''}`);
+  if (row.exhibition_count) parts.push(`${row.exhibition_count} exhibition${row.exhibition_count > 1 ? 's' : ''}`);
+  if (row.section_count) parts.push(`${row.section_count} section${row.section_count > 1 ? 's' : ''}`);
+
+  return parts.join(', ');
+}
+---
+
+<AdminLayout
+  title="Media"
+  lead="Every file uploaded to the three storage buckets, and what currently uses it."
+>
+  {message && <Note tone={isErrorCode(code) ? 'error' : 'ok'} text={message} />}
+  {errors.length > 0 && <Note tone="error" text="Not done:" items={errors} />}
+  {error && <Note tone="error" text={`Could not read the library: ${error.message}`} />}
+
+  <details class="panel">
+    <summary class="media__add">Upload a file</summary>
+
+    <form class="form" method="POST" enctype="multipart/form-data" style="margin-top:1rem;">
+      <input type="hidden" name="_action" value="upload" />
+      <input type="hidden" name="image_width" value="" data-width />
+      <input type="hidden" name="image_height" value="" data-height />
+
+      <div class="form__grid">
+        <div class="field">
+          <label class="field__label" for="up-image">File <span class="field__req">*</span></label>
+          <input
+            type="file"
+            id="up-image"
+            name="image"
+            accept="image/jpeg,image/png,image/webp,image/avif,image/gif"
+            required
+            data-file
+          />
+        </div>
+
+        <Field idPrefix="up" name="bucket" label="Bucket" type="select"
+          value="artworks"
+          options={Object.values(BUCKETS).map((b) => ({ value: b, label: b }))} />
+
+        <Field idPrefix="up" name="alt" label="Alt text" wide />
+        <Field idPrefix="up" name="caption" label="Caption" wide />
+      </div>
+
+      <div class="form__foot">
+        <button type="submit" class="btn">Upload</button>
+      </div>
+    </form>
+  </details>
+
+  <form class="filterbar" method="GET" role="search">
+    <div class="field">
+      <label class="field__label" for="q">Search path</label>
+      <input type="search" id="q" name="q" value={search} placeholder="filename" />
+    </div>
+
+    <div class="field">
+      <label class="field__label" for="bucket">Bucket</label>
+      <select id="bucket" name="bucket">
+        {bucketOptions.map((opt) => (
+          <option value={opt.value} selected={opt.value === bucket}>{opt.label}</option>
+        ))}
+      </select>
+    </div>
+
+    <div class="filterbar__go">
+      <button type="submit" class="btn btn--quiet">Apply</button>
+    </div>
+
+    {(search || bucket) && (
+      <div class="filterbar__go">
+        <a class="btn btn--quiet" href="/admin/media">Clear</a>
+      </div>
+    )}
+  </form>
+
+  {
+    files && files.length > 0 ? (
+      <>
+        <div class="mediagrid">
+          {files.map((file, i) => {
+            const url = publicUrl(file.bucket, file.path);
+            const used = usedBy(usage[file.id]);
+            const prefix = `m${i}`;
+            /* The save button sits outside its form — see the note by the
+               delete control below. */
+            const formId = `media-${i}`;
+
+            return (
+              <div class="mediacard">
+                <figure class="mediacard__fig">
+                  <img src={url} alt={file.alt || ''} loading="lazy" decoding="async" />
+                </figure>
+
+                <div class="mediacard__body">
+                  <p class="mediacard__path">{file.path}</p>
+
+                  <p class="mediacard__meta">
+                    {[
+                      file.bucket,
+                      file.mime_type,
+                      file.width && file.height ? `${file.width} × ${file.height}` : '',
+                      formatBytes(file.byte_size),
+                      dateFormat.format(new Date(file.created_at)),
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </p>
+
+                  <p class="mediacard__meta">
+                    {used ? (
+                      <span class="flag flag--accent">Used by {used}</span>
+                    ) : (
+                      <span class="flag">Not used</span>
+                    )}
+                  </p>
+
+                  <details>
+                    <summary class="mediacard__more">Details</summary>
+
+                    <form class="form" id={formId} method="POST" style="gap:0.6rem; margin-top:0.6rem;">
+                      <input type="hidden" name="_action" value="save" />
+                      <input type="hidden" name="id" value={file.id} />
+
+                      <Field idPrefix={prefix} name="alt" label="Alt text" value={file.alt} />
+                      <Field idPrefix={prefix} name="caption" label="Caption" value={file.caption} />
+
+                      <div class="field">
+                        <label class="field__label" for={`${prefix}-url`}>Public URL</label>
+                        <input
+                          type="text"
+                          id={`${prefix}-url`}
+                          value={url}
+                          readonly
+                          data-copy-source
+                          onfocus="this.select()"
+                        />
+                        <p class="field__hint">
+                          {/* readonly + select-on-focus, so the URL can be
+                              copied with the keyboard alone. The button below
+                              is the shortcut, not the only way. */}
+                          <button type="button" class="btn btn--quiet btn--small" data-copy>
+                            Copy URL
+                          </button>
+                        </p>
+                      </div>
+
+                    </form>
+
+                    {/* Outside the form above. ConfirmAction carries its own
+                        <form>, and HTML forbids nesting one form in another:
+                        the parser drops the inner tag and moves its hidden
+                        fields onto the outer form, which already posts
+                        `_action: save`. Duplicate field names resolve to the
+                        first, so every delete here submitted a save — and the
+                        panel reported "saved" for a file it had been asked to
+                        destroy. */}
+                    <div
+                      class="form__foot form__foot--split form__foot--detached"
+                      style="padding-top:0.6rem;"
+                    >
+                      <button type="submit" class="btn btn--small" form={formId}>
+                        Save details
+                      </button>
+
+                      {used ? (
+                        <ConfirmAction
+                          action="/admin/media"
+                          label="Delete"
+                          confirmLabel="Delete anyway"
+                          question={`This file is used by ${used}. Deleting it leaves those records showing a placeholder instead. They are not deleted.`}
+                          fields={{ _action: 'delete', id: file.id, force: '1' }}
+                        />
+                      ) : (
+                        <ConfirmAction
+                          action="/admin/media"
+                          label="Delete"
+                          question="Delete this file from storage? Nothing uses it. This cannot be undone."
+                          fields={{ _action: 'delete', id: file.id }}
+                        />
+                      )}
+                    </div>
+                  </details>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <Pager page={page} perPage={PER_PAGE} total={total} url={Astro.url} />
+      </>
+    ) : (
+      <p class="empty">
+        {search || bucket ? 'No file matches those filters.' : 'No files uploaded yet.'}
+      </p>
+    )
+  }
+</AdminLayout>
+
+<style>
+  .media__add,
+  .mediacard__more {
+    cursor: pointer;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  .mediacard__more {
+    font-size: 0.625rem;
+  }
+</style>
+
+<script>
+  /* Measures the chosen file for the upload form at the top of this page.
+     The same job ImageField does on the edit forms; not shared with it
+     because that component owns its own preview and this one has none. */
+  const fileInput = document.querySelector('[data-file]');
+  const widthField = document.querySelector('[data-width]');
+  const heightField = document.querySelector('[data-height]');
+
+  if (fileInput instanceof HTMLInputElement) {
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files && fileInput.files[0];
+      if (!file) return;
+
+      const url = URL.createObjectURL(file);
+      const probe = new Image();
+
+      probe.addEventListener('load', () => {
+        if (widthField instanceof HTMLInputElement) widthField.value = String(probe.naturalWidth || '');
+        if (heightField instanceof HTMLInputElement) heightField.value = String(probe.naturalHeight || '');
+        URL.revokeObjectURL(url);
+      });
+
+      /* A file the browser cannot decode still has to release the object URL,
+         or it stays in memory until the tab closes. */
+      probe.addEventListener('error', () => URL.revokeObjectURL(url));
+
+      probe.src = url;
+    });
+  }
+
+  /* Copy-to-clipboard. navigator.clipboard is unavailable over plain HTTP on
+     anything but localhost, so the failure path selects the text instead of
+     silently doing nothing. */
+  document.querySelectorAll('[data-copy]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const field = button.closest('.field')?.querySelector('[data-copy-source]');
+      if (!(field instanceof HTMLInputElement)) return;
+
+      const original = button.textContent;
+
+      try {
+        await navigator.clipboard.writeText(field.value);
+        button.textContent = 'Copied';
+      } catch {
+        field.select();
+        button.textContent = 'Press Ctrl+C';
+      }
+
+      setTimeout(() => {
+        button.textContent = original;
+      }, 2000);
+    });
+  });
+</script>
