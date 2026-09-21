@@ -19,7 +19,7 @@
      --accent-ink #B4501C    4.7 : 1   accent at text size       AA
 
      The brief's orange is kept exactly as specified for the display marks
-     it was chosen for — the period after the name, the × in Art × Sport,
+     it was chosen for — the period after the name, the × in Art × Champions,
      the hairline rules. At 11px it only reaches 3:1, so anything set in the
      accent at text size uses --accent-ink, a darker step of the same hue.
      Same colour language, readable at small sizes. */
@@ -52,15 +52,22 @@
      5.2:1 against the darkest of them. */
   --ink-on-tint: #5f5c56;
 
-  /* Type families.
-     Instrument Serif has no Cyrillic; Prata follows it in the stack and
-     picks up the Bulgarian headings, so they are never left to whatever
-     serif the operating system happens to supply. */
-  --serif: 'Instrument Serif', 'Prata', 'Iowan Old Style', Georgia, serif;
+  /* One family for the whole public site. Golos Text covers Latin and
+     Cyrillic on its own, so nothing changes face mid-sentence around a Latin
+     term, and display sizes are set in the same grotesque as body copy.
+     The admin panel keeps its own pair of families in src/styles/admin.css;
+     that file has its own :root and is never loaded together with this one. */
   --sans: 'Golos Text', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 
-  /* fluid type scale */
-  --fs-display: clamp(3.1rem, 10.5vw, 10rem);
+  /* fluid type scale.
+     The display step used to grow at 10.5vw, a rate set against a condensed
+     serif. Golos Text sets the same words about 6% wider, and the homepage
+     heading fills its column exactly — at 10.5vw the descending line overran
+     the mask that the reveal animation needs and lost its last letters
+     between roughly 1024px and 1600px. The rate carries the difference so the
+     floor and the ceiling, which govern phones and very wide screens, stay
+     where they were. */
+  --fs-display: clamp(3.1rem, 9.7vw, 10rem);
   --fs-h1: clamp(2.5rem, 6.4vw, 5.5rem);
   --fs-h2: clamp(1.9rem, 4vw, 3.5rem);
   --fs-h3: clamp(1.35rem, 2.1vw, 1.95rem);
@@ -182,22 +189,32 @@ a {
 
 /* ---------------------------------------------------------------- type */
 
+/* `.serif` is kept as a class name because six templates hook onto it. It no
+   longer switches family — the whole site is one family now — and carries only
+   the display treatment: regular weight and the tighter tracking that large
+   type needs. */
 .display,
 .serif {
-  font-family: var(--serif);
+  font-family: var(--sans);
   font-weight: 400;
   letter-spacing: -0.012em;
 }
 
+/* 0.9 was safe under a condensed serif with shallow descenders. Golos Text
+   carries taller ascenders and a deeper tail, and at 0.9 the y of "Beyond"
+   crossed the dot of the i in "painting" on the line below — measured at 2.4px
+   of overlap on a phone and about 7px on a desktop. A line needs at least the
+   descender of one line plus the ascender of the next, which for this pair is
+   0.948em; 0.97 clears it and still reads as display leading. */
 .display {
   font-size: var(--fs-display);
-  line-height: 0.9;
+  line-height: 0.97;
   letter-spacing: -0.028em;
 }
 
 h1,
 .h1 {
-  font-family: var(--serif);
+  font-family: var(--sans);
   font-size: var(--fs-h1);
   font-weight: 400;
   line-height: 0.98;
@@ -206,7 +223,7 @@ h1,
 
 h2,
 .h2 {
-  font-family: var(--serif);
+  font-family: var(--sans);
   font-size: var(--fs-h2);
   font-weight: 400;
   line-height: 1.04;
@@ -215,7 +232,7 @@ h2,
 
 h3,
 .h3 {
-  font-family: var(--serif);
+  font-family: var(--sans);
   font-size: var(--fs-h3);
   font-weight: 400;
   line-height: 1.15;
@@ -264,15 +281,19 @@ h3,
 
 /* The period after the wordmark. At 11px in the header and footer it is
    text-sized and takes the readable step; the two display-sized uses —
-   the homepage name and the Art × Sport title — override this back to the
+   the homepage heading and the Art × Champions title — override this back to the
    full-strength accent in their own stylesheets. */
 .dot {
   color: var(--accent-ink);
 }
 
+/* The × in the Art × Champions title. It used to be set in the serif italic;
+   Golos Text ships no italic cut, so asking for one would leave the browser to
+   synthesise a slant. Upright in the one family, as the title's own stylesheet
+   already forced it to be. */
 .amp {
-  font-family: var(--serif);
-  font-style: italic;
+  font-family: var(--sans);
+  font-style: normal;
 }
 
 /* ---------------------------------------------------------------- layout */
@@ -462,10 +483,21 @@ h3,
 .reveal[data-delay='3'] { transition-delay: 270ms; }
 .reveal[data-delay='4'] { transition-delay: 360ms; }
 
-/* type reveal: the line slides up from behind a mask */
+/* type reveal: the line slides up from behind a mask.
+
+   The mask is the line box, and the display and h1 steps set their leading
+   under 1 — 0.97 and 0.98 — so the tails of y, g and p reach about 0.11em
+   below it and were being cut off ("Beyond", "painting", "Bulgaria",
+   "Champions"). The padding lets the mask reach 0.14em further down, which
+   clears the deepest tail, and the equal negative margin gives that space
+   straight back, so no line and nothing below the heading moves. It stays
+   under the roughly 0.17em at which the top of a letter still waiting below
+   the line would start to show before the reveal begins. */
 .reveal-line {
   display: block;
   overflow: hidden;
+  padding-bottom: 0.14em;
+  margin-bottom: -0.14em;
 }
 
 .reveal-line > span {

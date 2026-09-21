@@ -60,19 +60,19 @@ import {
  * the day someone revokes a key.
  */
 async function load() {
-  if (!isSupabaseConfigured) return { artworks: null, exhibitions: null, categories: null };
+  if (!isSupabaseConfigured) return { artworks: null, exhibitions: null, categories: null, home: null };
 
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
-    const [works, shows, cats] = await Promise.all([
+    const [works, shows, cats, home] = await Promise.all([
       supabase
         .from('artworks')
         .select(`
           id, slug, title, year, year_display, medium, dimensions, description,
-          aspect_ratio, is_selected, is_featured, sort_order,
+          aspect_ratio, is_selected, is_featured, sort_order, media_id,
           media:media_id ( bucket, path, alt, width, height ),
           category:category_id ( slug, label )
         `)
@@ -89,17 +89,27 @@ async function load() {
         .from('categories')
         .select('slug, label, sort_order')
         .order('sort_order', { ascending: true }),
+
+      /* The three opening images of the homepage, chosen in Admin → Homepage.
+         Read as anon like everything else here, so RLS returns published rows
+         only, and a joined media row only while this published section points
+         at it. */
+      supabase
+        .from('content_sections')
+        .select('section_key, media:media_id ( id, bucket, path, alt, caption, width, height )')
+        .eq('page_key', 'home'),
     ]);
 
     return {
       artworks: works.error ? null : works.data,
       exhibitions: shows.error ? null : shows.data,
       categories: cats.error ? null : cats.data,
+      home: home.error ? null : home.data,
     };
   } catch {
     /* Unreachable host, DNS failure, a malformed URL in .env. Nothing here is
        worth failing a build over. */
-    return { artworks: null, exhibitions: null, categories: null };
+    return { artworks: null, exhibitions: null, categories: null, home: null };
   }
 }
 
@@ -159,6 +169,9 @@ function toArtwork(row) {
     dimensions: row.dimensions ?? '',
     image: row.media ? publicUrl(row.media.bucket, row.media.path) : '',
     alt: row.media?.alt ?? '',
+    /* Lets the homepage recognise an image chosen in Admin → Homepage as this
+       work's photograph, and link the frame to the work as it does today. */
+    mediaId: row.media_id ?? '',
     description: row.description ?? '',
     ratio: ratioFor(row),
     selected: Boolean(row.is_selected),
@@ -218,6 +231,39 @@ function toExhibition(row) {
 export const usingDatabase = Array.isArray(remote.artworks) && remote.artworks.length > 0;
 
 export const artworks = usingDatabase ? remote.artworks.map(toArtwork) : fallbackArtworks;
+
+/**
+ * The homepage's opening images, as chosen in Admin → Homepage.
+ *
+ * Rows in content_sections with page_key 'home':
+ *   image-large    media = the large frame of the opening collage
+ *   image-small-1  media = the upper small frame
+ *   image-small-2  media = the lower small frame
+ *
+ * Each is null when nothing has been chosen, and HomeView keeps the frame it
+ * has always had there. So an empty table, an unreachable database or a slot
+ * left on "No image" renders exactly as the page did before this existed.
+ */
+function toHomeImage(media) {
+  if (!media?.bucket || !media?.path) return null;
+
+  return {
+    src: publicUrl(media.bucket, media.path),
+    alt: media.alt || media.caption || '',
+    /* the published work this file belongs to, if any — the frame links to it */
+    artwork: artworks.find((a) => a.mediaId && a.mediaId === media.id) ?? null,
+  };
+}
+
+const homeRow = (key) => (Array.isArray(remote.home) ? remote.home.find((r) => r.section_key === key) : null);
+
+export const homepage = {
+  images: {
+    large: toHomeImage(homeRow('image-large')?.media),
+    small1: toHomeImage(homeRow('image-small-1')?.media),
+    small2: toHomeImage(homeRow('image-small-2')?.media),
+  },
+};
 
 const hasRemoteExhibitions = Array.isArray(remote.exhibitions) && remote.exhibitions.length > 0;
 

@@ -25,12 +25,12 @@ export const ui = {
     'site.location': 'London, United Kingdom',
     'meta.title': 'Alexandre Vassilev-Vasilevsa | Contemporary Artist',
     'meta.description':
-      'Bulgarian-born, London-based contemporary artist working across abstraction, figurative painting, action painting and Art × Sport.',
+      'Bulgarian-born, London-based contemporary artist working across abstraction, figurative painting, action painting and Art × Champions.',
 
     // ---------------------------------------------------------------- nav
     'nav.works': 'Works',
-    'nav.artsport': 'Art × Sport',
-    'nav.exhibitions': 'Exhibitions',
+    'nav.artsport': 'Art × Champions',
+    'nav.exhibitions': 'Certified Prints',
     'nav.about': 'About',
     'nav.contact': 'Contact',
     'nav.menu': 'Menu',
@@ -50,7 +50,7 @@ export const ui = {
     // ---------------------------------------------------------------- placeholders
     'ph.artwork': 'Artwork placeholder',
     'ph.short': 'Placeholder',
-    'ph.artsport': 'Art × Sport image placeholder',
+    'ph.artsport': 'Art × Champions image placeholder',
     'ph.portrait': 'Artist portrait placeholder',
     'ph.video': 'Video placeholder',
     'ph.awaiting': 'Awaiting photography',
@@ -60,20 +60,21 @@ export const ui = {
 
     // ---------------------------------------------------------------- home
     'home.eyebrow': 'Contemporary artist — Bulgaria / London',
-    'home.statement1': 'Painting as movement.',
-    'home.statement2': 'Colour as energy.',
-    'home.intro':
-      'Alexandre Vassilev-Vasilevsa is a Bulgarian-born contemporary artist based in London. His practice moves between abstraction and figuration, held together by gesture, colour and the physical act of painting.',
-    'home.rail': 'Painting as an act, not an object',
+    /* The homepage title, one key per line. The full stop after the second
+       line is not part of the string — HomeView sets it in the accent. */
+    'home.title1': 'Organic Tessellated',
+    'home.title2': 'Abstraction',
+    'home.lead':
+      'Vasilevsa’s Organic Tessellated Abstraction transforms the painted surface into a densely interconnected field of irregular chromatic fragments. Dark linear structures separate and simultaneously connect the individual forms, while impasto and relief-like textures give the works a tactile, almost archaeological character. The resulting compositions exist between painting, mosaic, drawing and low relief, balancing controlled structure with apparent visual chaos.',
     'home.quote': 'Painting as an act, not an object.',
     'home.quoteNote':
       'The work begins with the body — with movement, pressure and the moment paint meets surface.',
     'home.selected': 'Selected works',
     'home.selectedNote': 'A shortlist from across the practice.',
-    'home.artsportTitle': 'Art × Sport',
+    'home.artsportTitle': 'Art × Champions',
     'home.artsportLead':
       'World and Olympic champions take physical part in the making of a painting — movement, touch and paint recorded directly on the canvas.',
-    'home.artsportCta': 'Enter Art × Sport',
+    'home.artsportCta': 'Enter Art × Champions',
     'home.aboutTitle': 'Born in Bulgaria. Based in London. Shaped by New York.',
     'home.aboutLead':
       'A stay in New York in the late 1990s opened his work to American Abstract Expressionism, and to a way of painting where energy is the subject.',
@@ -98,7 +99,7 @@ export const ui = {
     'detail.enquire': 'Enquire about this work',
 
     // ---------------------------------------------------------------- art × sport
-    'as.title': 'Art × Sport',
+    'as.title': 'Art × Champions',
     'as.chain': 'Athlete → Movement → Paint → Canvas → Artwork',
     'as.lead':
       'A body of work in which sport is not the subject of the painting but its source. World and Olympic champions take physical part in the making — the same movement that wins a title leaves its trace in paint.',
@@ -134,7 +135,7 @@ export const ui = {
     'about.statement': 'Born in Bulgaria. Based in London. Shaped by New York.',
     'about.introTitle': 'Introduction',
     'about.intro1':
-      'Alexandre Vassilev-Vasilevsa is a Bulgarian-born contemporary artist living and working in London. He paints across contemporary, abstract and figurative registers, and works in action painting and in the Art × Sport series.',
+      'Alexandre Vassilev-Vasilevsa is a Bulgarian-born contemporary artist living and working in London. He paints across contemporary, abstract and figurative registers, and works in action painting and in the Art × Champions series.',
     'about.intro2':
       'His visual language turns on movement, energy, colour and gesture — on painting understood as something done rather than something arranged.',
     'about.bioTitle': 'Biography',
@@ -150,20 +151,20 @@ export const ui = {
     'about.practiceTitle': 'Practice',
     'about.practice1':
       'The mosaic-like method builds an image out of accumulated marks. Read close, the surface breaks into fragments of colour; read at distance, figure and field resolve into one another.',
-    'about.asTitle': 'Art × Sport',
+    'about.asTitle': 'Art × Champions',
     'about.as1':
-      'The Art × Sport project, developed mainly across 2014 and 2015, brought world and Olympic champions into the physical making of paintings through movement, touch and direct work with paint. More than 400 works have been produced within this direction.',
+      'The Art × Champions project, developed mainly across 2014 and 2015, brought world and Olympic champions into the physical making of paintings through movement, touch and direct work with paint. More than 400 works have been produced within this direction.',
     'about.asCta': 'See the project',
 
     // ---------------------------------------------------------------- exhibitions
-    'ex.title': 'Exhibitions',
+    'ex.title': 'Certified Prints',
     'ex.lead':
-      'A chronological record of exhibitions. The history is being compiled and will be published here.',
+      'Certified prints of selected works, available for enquiry.',
     /* Shown in place of the timeline while the database holds no published
        exhibitions. `ex.notice` below described the placeholder rows and is no
        longer rendered anywhere — the rows it referred to are gone. */
     'ex.empty':
-      'A chronological record of exhibitions. The archive is currently being compiled and will be published here.',
+      'Certified prints of selected works, available for enquiry.',
     'ex.notice':
       'Exhibition history has not been supplied yet. The entries below are marked placeholders showing how real records will appear.',
     'ex.solo': 'Solo',
@@ -177,7 +178,7 @@ export const ui = {
     // ---------------------------------------------------------------- contact
     'contact.title': "Let's talk about art.",
     'contact.lead':
-      'For exhibitions, collaborations, acquisitions and professional enquiries.',
+      'For certified prints, collaborations, acquisitions and professional enquiries.',
     'contact.e1': 'Exhibition enquiries',
     'contact.e2': 'Collaborations',
     'contact.e3': 'Acquisitions',

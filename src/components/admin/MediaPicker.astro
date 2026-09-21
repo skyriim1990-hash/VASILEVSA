@@ -1,0 +1,255 @@
+---
+/**
+ * MEDIA PICKER
+ *
+ * Chooses an existing file from the media library — it never uploads one.
+ * Used by Admin → Homepage, where every image is a reference to a file that
+ * is already in the library.
+ *
+ * ---------------------------------------------------------------------------
+ * HOW IT SUBMITS
+ * ---------------------------------------------------------------------------
+ * Each file in the library is a radio button named after the slot, and "No
+ * image" is one more, with an empty value. So the choice travels with the
+ * form as an ordinary field: it works with JavaScript off, and the server
+ * reads exactly one id, or '' for none.
+ *
+ * With JavaScript on, the preview, the file details and the button label
+ * follow the choice immediately, before anything is saved.
+ *
+ * The library opens in a <details>, so its thumbnails — full-size files, see
+ * the note in Thumb.astro — are not fetched until someone asks to see them.
+ */
+
+import { publicUrl } from '../../lib/supabase/storage.js';
+import { formatBytes } from '../../lib/admin/media.js';
+
+const {
+  /** the form field this slot submits */
+  name,
+  label,
+  hint = '',
+  /** the media row currently chosen, or null */
+  current = null,
+  /** every media row the administrator can see */
+  library = [],
+  /** the frame's proportions on the public page, used for the preview */
+  ratio = '3 / 4',
+  /** what the public page shows while nothing is chosen */
+  emptyText = 'No image selected',
+} = Astro.props;
+
+const describe = (m) =>
+  [m.bucket, m.width && m.height ? `${m.width} × ${m.height}` : '', formatBytes(m.byte_size)]
+    .filter(Boolean)
+    .join(' · ');
+
+const currentSrc = current ? publicUrl(current.bucket, current.path) : '';
+const legendId = `${name}-legend`;
+---
+
+<fieldset class="picker" data-picker aria-labelledby={legendId}>
+  <legend class="field__label" id={legendId}>{label}</legend>
+
+  <div class="imagefield">
+    <div class="imagefield__preview" style={`aspect-ratio: ${ratio};`}>
+      <img
+        src={currentSrc}
+        alt=""
+        hidden={!currentSrc}
+        loading="lazy"
+        decoding="async"
+        data-picker-preview
+      />
+      <span class="imagefield__empty" hidden={Boolean(currentSrc)} data-picker-empty>{emptyText}</span>
+    </div>
+
+    <div class="imagefield__body">
+      <p class="imagefield__meta" data-picker-meta>
+        {current ? (
+          <>
+            {current.path}
+            <br />
+            {describe(current)}
+          </>
+        ) : (
+          'Nothing selected.'
+        )}
+      </p>
+
+      {
+        current && !current.is_published && (
+          <p class="note note--warn picker__warn">
+            This file is withdrawn in the media library, so the public page will keep its
+            default frame until it is republished there.
+          </p>
+        )
+      }
+
+      {hint && <p class="field__hint">{hint}</p>}
+
+      <details class="picker__library">
+        <summary class="btn btn--quiet btn--small" data-picker-summary>
+          {current ? 'Replace media' : 'Select media'}
+        </summary>
+
+        {
+          library.length === 0 ? (
+            <p class="empty">The media library is empty. Upload files in Media first.</p>
+          ) : (
+            <div class="mediagrid picker__grid">
+              <label class="mediacard picker__option">
+                <input type="radio" name={name} value="" checked={!current} data-src="" data-meta="Nothing selected." />
+                <span class="mediacard__fig picker__none">No image</span>
+                <span class="mediacard__body">
+                  <span class="mediacard__meta">Keep the page’s default frame</span>
+                </span>
+              </label>
+
+              {library.map((m) => {
+                const src = publicUrl(m.bucket, m.path);
+                return (
+                  <label class="mediacard picker__option">
+                    <input
+                      type="radio"
+                      name={name}
+                      value={m.id}
+                      checked={current?.id === m.id}
+                      data-src={src}
+                      data-meta={`${m.path}\n${describe(m)}`}
+                    />
+                    <img class="mediacard__fig picker__thumb" src={src} alt="" loading="lazy" decoding="async" />
+                    <span class="mediacard__body">
+                      <span class="mediacard__path">{m.path}</span>
+                      <span class="mediacard__meta">{describe(m)}</span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          )
+        }
+      </details>
+    </div>
+  </div>
+</fieldset>
+
+<style>
+  .picker {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+  }
+
+  .picker .imagefield__preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .picker__warn {
+    margin: 0;
+  }
+
+  .picker__library {
+    margin-top: 0.25rem;
+  }
+
+  .picker__library > summary {
+    list-style: none;
+    cursor: pointer;
+    display: inline-flex;
+  }
+
+  .picker__library > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .picker__grid {
+    margin-top: 1rem;
+    max-height: 32rem;
+    overflow-y: auto;
+    padding: 0.25rem;
+  }
+
+  .picker__option {
+    position: relative;
+    cursor: pointer;
+  }
+
+  /* The radio stays a real, focusable control — it is what the keyboard and
+     the form both use — tucked into the corner of its card. */
+  .picker__option input {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    margin: 0;
+    accent-color: var(--accent-ink);
+  }
+
+  .picker__option:has(input:checked) {
+    outline: 2px solid var(--accent-ink);
+    outline-offset: -1px;
+  }
+
+  .picker__option:has(input:focus-visible) {
+    outline: 2px solid var(--ink);
+  }
+
+  .picker__thumb {
+    width: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .picker__none {
+    display: grid;
+    place-items: center;
+    font-size: 0.625rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .mediacard__path {
+    word-break: break-all;
+  }
+</style>
+
+<script>
+  /* Each picker updates its own preview — a page carries three. */
+  document.querySelectorAll('[data-picker]').forEach((root) => {
+    const preview = root.querySelector('[data-picker-preview]');
+    const empty = root.querySelector('[data-picker-empty]');
+    const meta = root.querySelector('[data-picker-meta]');
+    const summary = root.querySelector('[data-picker-summary]');
+
+    root.addEventListener('change', (event) => {
+      const input = event.target;
+      if (!(input instanceof HTMLInputElement) || input.type !== 'radio') return;
+
+      const src = input.dataset.src || '';
+
+      if (preview instanceof HTMLImageElement) {
+        if (src) preview.src = src;
+        else preview.removeAttribute('src');
+        preview.hidden = !src;
+      }
+      if (empty instanceof HTMLElement) empty.hidden = Boolean(src);
+
+      if (meta instanceof HTMLElement) {
+        const [first, second] = (input.dataset.meta || '').split('\n');
+        meta.textContent = '';
+        meta.append(first || '');
+        if (second) {
+          meta.append(document.createElement('br'));
+          meta.append(second);
+        }
+      }
+
+      if (summary instanceof HTMLElement) summary.textContent = src ? 'Replace media' : 'Select media';
+    });
+  });
+</script>

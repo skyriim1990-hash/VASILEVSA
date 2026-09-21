@@ -44,6 +44,37 @@ const { items = [], class: className = '' } = Astro.props;
     overflow-wrap: break-word;
   }
 
+  /* The homepage band, from 1025px up, where it turns into two columns and
+     these three items share one of them — 586px at 1280. The type reaches its
+     ceiling there while the column does not, so in three equal thirds
+     "Olympic" wanted 204px and had 133px, and break-word cut it in half.
+
+     The third column is sized to its own longest word instead: min-content is
+     exactly the width of "Olympic", "World &" is a little shorter and joins
+     it on the first line, and the word can neither split nor run past the end
+     of the rule. The first two share what is left. Their right padding goes,
+     because the grid gap already separates the columns and that padding was
+     only narrowing them from the inside; without it their inner width at
+     1280px is exactly what it was, so "400+" and "2014—2015" set as before.
+     The dividers between the three move to follow the new column widths.
+
+     Only this instance is affected: the Art × Champions page passes
+     as-open__stats and keeps the equal thirds and break-word above. Below
+     1025px the band is a single column and "Olympic" fits on its own. */
+  @media (min-width: 1025px) {
+    .as-band__stats {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) min-content;
+    }
+
+    .as-band__stats .stats__item {
+      padding-right: 0;
+    }
+
+    .as-band__stats .stats__item:last-child .stats__n {
+      overflow-wrap: normal;
+    }
+  }
+
   .stats__l {
     margin: 0.85rem 0 0;
     color: var(--ink-soft);

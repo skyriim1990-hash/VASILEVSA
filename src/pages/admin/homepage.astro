@@ -1,0 +1,101 @@
+---
+/**
+ * /admin/homepage
+ *
+ * The three images of the homepage's opening collage, chosen from the media
+ * library. Stored in content_sections under page_key = 'home' — see
+ * src/lib/admin/homepage.js for the rows and why they are shaped so.
+ *
+ * An image slot left on "No image" keeps the frame the page has always had
+ * there. The homepage's text is not edited here.
+ */
+
+export const prerender = false;
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import Note from '../../components/admin/Note.astro';
+import MediaPicker from '../../components/admin/MediaPicker.astro';
+import { loadHomepage, saveHomepage, IMAGE_SLOTS } from '../../lib/admin/homepage.js';
+import { listMedia } from '../../lib/admin/queries.js';
+import { messageFor, isErrorCode } from '../../lib/admin/forms.js';
+
+let errors = [];
+
+if (Astro.request.method === 'POST') {
+  const result = await saveHomepage(Astro);
+  if (result instanceof Response) return result;
+  errors = result;
+}
+
+const supabase = Astro.locals.supabase;
+const { rows, error } = await loadHomepage(supabase);
+
+/* The whole library, newest first. The picker lists every file an
+   administrator can see, published or withdrawn, from every bucket. */
+const { data: library, error: libraryError } = await listMedia(supabase, { perPage: 500 });
+
+const savedAt = Object.values(rows)
+  .map((row) => row.updated_at)
+  .filter(Boolean)
+  .sort()
+  .pop();
+
+const savedLabel = savedAt
+  ? new Date(savedAt).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })
+  : '';
+
+const code = Astro.url.searchParams.get('m') ?? '';
+const message = messageFor(code);
+---
+
+<AdminLayout
+  title="Homepage"
+  lead="The three images of the homepage’s opening collage — one large frame and two small ones beside it."
+>
+  <Fragment slot="actions">
+    <a class="btn btn--quiet" href="/" target="_blank" rel="noopener">View page ↗</a>
+  </Fragment>
+
+  <Note
+    tone="warn"
+    text="The public pages are built ahead of time, so a saved change appears on the live site the next time it is rebuilt and deployed. On a local dev server, restart it to see the change."
+  />
+
+  {message && <Note tone={isErrorCode(code) ? 'error' : 'ok'} text={message} />}
+  {errors.length > 0 && <Note tone="error" text="Not saved:" items={errors} />}
+  {error && <Note tone="error" text={`Could not read the homepage images: ${error.message}`} />}
+  {libraryError && <Note tone="error" text={`Could not read the media library: ${libraryError.message}`} />}
+
+  <form class="form" method="POST" action="/admin/homepage">
+    <section class="panel" aria-labelledby="home-images">
+      <p class="panel__title" id="home-images">Images</p>
+
+      <p class="field__hint">
+        Chosen from the media library — nothing is uploaded or deleted here. A slot on “No image” keeps
+        the frame the homepage shows today. Each image is cropped to its frame’s proportions. Alt text
+        is edited in Media.
+      </p>
+
+      <div class="stack">
+        {
+          IMAGE_SLOTS.map((slot) => (
+            <MediaPicker
+              name={slot.field}
+              label={slot.label}
+              hint={slot.hint}
+              ratio={slot.ratio}
+              current={rows[slot.key]?.media ?? null}
+              library={library ?? []}
+              emptyText="No image selected — the page keeps its default frame"
+            />
+          ))
+        }
+      </div>
+    </section>
+
+    <div class="form__foot">
+      <button type="submit" class="btn">Save changes</button>
+      {savedLabel && <span class="field__hint">Last saved {savedLabel}</span>}
+    </div>
+  </form>
+</AdminLayout>

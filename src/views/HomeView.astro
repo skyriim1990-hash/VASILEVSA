@@ -5,7 +5,7 @@ import SectionHeader from '../components/SectionHeader.astro';
 import Statistics from '../components/Statistics.astro';
 import Disclosure from '../components/Disclosure.astro';
 import { useTranslations, path } from '../i18n/utils.js';
-import { homepageArtworks, artworkIndex } from '../data/content.js';
+import { homepageArtworks, artworkIndex, homepage } from '../data/content.js';
 import { displayAlt, displayTitle } from '../utils/display.js';
 
 const { lang = 'en' } = Astro.props;
@@ -41,7 +41,27 @@ const slot = (i) => {
   };
 };
 
-const [main, sideTop, sideBottom] = [slot(0), slot(1), slot(2)];
+/* An image chosen in Admin → Homepage takes its frame; a frame with nothing
+   chosen keeps what slot() gives it. When the chosen file is also a published
+   work's photograph, the frame links to that work, as the default ones do. */
+const chosen = (img, fallback) => {
+  if (!img) return fallback;
+  const work = img.artwork;
+  const index = work ? artworkIndex(work.id) : fallback.index;
+  return {
+    src: img.src,
+    alt: img.alt || (work ? displayAlt(work, t, index) : ''),
+    index,
+    href: work ? path(`/works/${work.id}`, lang) : '',
+    label: work ? displayTitle(work, t, index) : '',
+  };
+};
+
+const [main, sideTop, sideBottom] = [
+  chosen(homepage.images.large, slot(0)),
+  chosen(homepage.images.small1, slot(1)),
+  chosen(homepage.images.small2, slot(2)),
+];
 
 /**
  * Wraps a collage frame in a link, or in nothing.
@@ -52,14 +72,14 @@ const [main, sideTop, sideBottom] = [slot(0), slot(1), slot(2)];
  * being a link at all.
  *
  * The spread below already links, because ArtworkCard is itself an anchor.
- * This is only about the three frames in the opening collage.
+ * This is only about the two small frames of the opening collage — the large
+ * one sits behind the title and is never a link.
  */
 const linkFor = (s) =>
   s.href
     ? { Tag: 'a', attrs: { href: s.href, 'aria-label': s.label, class: 'opening__link' } }
     : { Tag: Fragment, attrs: {} };
 
-const mainLink = linkFor(main);
 const sideTopLink = linkFor(sideTop);
 const sideBottomLink = linkFor(sideBottom);
 
@@ -74,51 +94,32 @@ const stats = [
 <section class="opening">
   <div class="shell opening__inner">
     <div class="opening__head">
-      <p class="micro reveal">{t('home.eyebrow')}</p>
-
       <h1 class="opening__name display">
-        <span class="reveal-line"><span>Alexandre</span></span>
-        <span class="reveal-line" data-delay="1"><span>Vassilev-</span></span>
-        <span class="reveal-line" data-delay="2"><span>Vasilevsa<span class="dot">.</span></span></span>
+        <span class="reveal-line"><span>{t('home.title1')}</span></span>
+        <span class="reveal-line" data-delay="1"><span>{t('home.title2')}<span class="dot">.</span></span></span>
       </h1>
     </div>
 
     <div class="opening__say">
-      <p class="opening__statement serif reveal">
-        {t('home.statement1')}<br />{t('home.statement2')}
-      </p>
-
-      {/* A short accent rule between the statement and the prose. It does the
-          job a paragraph break cannot: marks where the voice changes from the
-          artist's own line to the site describing him. Decorative, so it is a
-          span rather than an <hr> — an <hr> is a thematic break and a screen
-          reader would announce it. */}
-      <span class="opening__rule reveal" data-delay="1" aria-hidden="true"></span>
-
-      <p class="body opening__intro reveal" data-delay="2">{t('home.intro')}</p>
-
-      <div class="opening__cta reveal" data-delay="3">
-        <a class="link" href={path('/works', lang)}>
-          <span>{t('common.viewAll')}</span>
-          <span class="link__arrow" aria-hidden="true"></span>
-        </a>
-      </div>
+      <p class="body opening__intro reveal" data-delay="2">{t('home.lead')}</p>
     </div>
 
     <div class="opening__collage">
+      {/* The large image is the ground the title stands on, not a link: an
+          anchor behind the text would take every click aimed at the words.
+          On desktop it is the full-bleed field; below 1025px it is the lead
+          image under the title. */}
       <div class="opening__main reveal">
-        <mainLink.Tag {...mainLink.attrs}>
-          <Media
-            src={main.src}
-            alt={main.alt}
-            ratio="3 / 4"
-            label={t('ph.artwork')}
-            index={main.index}
-            tone={1}
-            priority={true}
-            sizes="(max-width: 760px) 92vw, 30vw"
-          />
-        </mainLink.Tag>
+        <Media
+          src={main.src}
+          alt={main.alt}
+          ratio="4 / 3"
+          label={t('ph.artwork')}
+          index={main.index}
+          tone={1}
+          priority={true}
+          sizes="(max-width: 1024px) 100vw, 76vw"
+        />
         {/* "Awaiting photography" under an actual photograph contradicts
             itself. The caption belongs to the empty state only. */}
         {!main.src && <p class="opening__caption micro">{t('ph.awaiting')}</p>}
@@ -154,8 +155,6 @@ const stats = [
       </div>
     </div>
   </div>
-
-  <span class="rail" aria-hidden="true">{t('home.rail')}</span>
 </section>
 
 <!-- ================================================== STATEMENT -->
@@ -271,22 +270,52 @@ const stats = [
 <style>
   /* ------------------------------------------------------------- opening */
 
+  /* The opening follows the approved reference: one wide photograph as the
+     ground of the hero, the title and paragraph standing on its washed-out
+     left side, and the two smaller works in a narrow column of their own on
+     the right. Desktop only — below 1025px the same pieces stack instead (see
+     the tablet block), because a text overlay on a phone-width photograph
+     leaves neither the words nor the picture legible.
+
+     The hero fills the screen under the sticky header and grows past it when
+     its content needs more room. The header is in the page flow, so the
+     photograph starts exactly at its bottom rule. */
   .opening {
     position: relative;
+    display: grid;
+    align-items: center;
+    min-height: calc(100svh - var(--header-h) - 1px);
     padding-top: clamp(2.5rem, 6vw, 5.5rem);
     padding-bottom: clamp(4rem, 8vw, 7rem);
+
+    /* the right-hand column: the two small works and the air between them
+       and the photograph */
+    --side-w: clamp(14rem, 19.5vw, 23rem);
+    --side-gap: clamp(1rem, 1.5vw, 1.75rem);
+    /* where the shell's content ends on the right, measured from the edge of
+       the page — the same arithmetic as .shell: centred at --max, padded by
+       --gutter */
+    --inset-r: calc((100% - min(100%, var(--max))) / 2 + var(--gutter));
   }
 
   .opening__inner {
     display: grid;
-    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+    grid-template-columns: minmax(0, 1fr) var(--side-w);
     grid-template-areas:
-      'head collage'
-      'say  collage';
-    grid-template-rows: auto 1fr;
-    column-gap: clamp(2rem, 5vw, 5.5rem);
+      'head side'
+      'say  side';
+    align-content: center;
+    column-gap: var(--side-gap);
     row-gap: clamp(2rem, 4vw, 3.5rem);
-    align-items: start;
+  }
+
+  /* Above the photograph. Neither the inner grid nor these are positioned
+     as containing blocks for it — the photograph measures itself against
+     .opening, so it can run to the edge of the page past the shell. */
+  .opening__head,
+  .opening__say {
+    position: relative;
+    z-index: 1;
   }
 
   .opening__head {
@@ -297,16 +326,26 @@ const stats = [
     grid-area: say;
   }
 
+  /* The wrapper keeps its markup but steps out of the layout, so the large
+     frame and the small column are placed by the grid above (and by the
+     stacking order below 1025px) independently. */
   .opening__collage {
-    grid-area: collage;
-    display: grid;
-    grid-template-columns: 1.32fr 1fr;
-    gap: var(--gap);
-    align-items: start;
+    display: contents;
   }
 
+  /* The heading is set here rather than on --fs-display, which the Art ×
+     Champions title also reads.
+
+     It is sized to the light side of the photograph. "Organic Tessellated" is
+     9.1 times its own font size wide; at 5.4vw the line ends near 55% of the
+     screen, inside the part of the photograph the fade has washed out, so
+     both lines stay on the pale ground and the title stays on two lines. The
+     ceiling takes over past about 1900px, where the shell stops widening.
+     Below 1025px the tablet block puts back the size the single column has
+     always used. */
   .opening__name {
     margin-top: clamp(1.5rem, 3vw, 2.5rem);
+    font-size: clamp(3.4rem, 5.4vw, 6.4rem);
   }
 
   .opening__name .dot {
@@ -314,76 +353,93 @@ const stats = [
     color: var(--accent);
   }
 
-  .opening__statement {
-    font-size: clamp(1.4rem, 2.3vw, 2.1rem);
-    line-height: 1.18;
-    letter-spacing: -0.012em;
-    color: var(--ink);
-  }
-
-  .opening__rule {
-    display: block;
-    width: clamp(2.25rem, 4vw, 3.5rem);
-    height: 2px;
-    margin-top: clamp(1.5rem, 2.6vw, 2.25rem);
-    background: var(--accent);
-  }
-
   .opening__intro {
     margin-top: clamp(1.25rem, 2.2vw, 1.85rem);
     max-width: 42ch;
   }
 
-  .opening__cta {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: clamp(1.75rem, 3vw, 2.5rem);
-    /* mirrors the reference, where the link sits right-aligned in its column */
-    padding-right: clamp(0rem, 3vw, 3rem);
+  /* The photograph: from the left edge of the page to just short of the
+     small column, from the header down to the end of the hero. */
+  .opening__main {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: calc(100% - var(--inset-r) - var(--side-w) - var(--side-gap));
+  }
+
+  .opening__main :global(.media) {
+    height: 100%;
+    aspect-ratio: auto;
+  }
+
+  /* The wash that keeps the text legible without hiding the photograph.
+     Made of the page colour, so it reads as the photograph fading into the
+     paper rather than as a white box laid over it. Three layers, each only as
+     strong as its job needs:
+
+     - a soft pool behind the paragraph, the one place that needs real
+       lightening — small grey type is what loses contrast first;
+     - a light left-to-right fade under the title, which is large and nearly
+       black and stays readable over far more of the picture;
+     - a gentle settle into the page along the bottom edge.
+
+     The photograph is left clearly visible from the left edge to the middle
+     and untouched on its right-hand third. */
+  .opening__main::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(
+        ellipse 62% 56% at 26% 74%,
+        color-mix(in srgb, var(--paper) 86%, transparent) 0%,
+        color-mix(in srgb, var(--paper) 74%, transparent) 55%,
+        transparent 100%
+      ),
+      linear-gradient(
+        to right,
+        color-mix(in srgb, var(--paper) 62%, transparent) 0%,
+        color-mix(in srgb, var(--paper) 48%, transparent) 30%,
+        color-mix(in srgb, var(--paper) 26%, transparent) 50%,
+        color-mix(in srgb, var(--paper) 8%, transparent) 66%,
+        transparent 80%
+      ),
+      linear-gradient(to top, color-mix(in srgb, var(--paper) 80%, transparent) 0%, transparent 16%);
+  }
+
+  /* With no photograph chosen the frame keeps its placeholder. Its tag moves
+     to the top right, clear of the text, and the caption to the bottom right. */
+  .opening__main :global(.media__ph) {
+    place-items: start end;
+    padding: clamp(1.5rem, 3vw, 3rem);
+  }
+
+  .opening__caption {
+    position: absolute;
+    right: clamp(1.5rem, 3vw, 3rem);
+    bottom: clamp(1.5rem, 3vw, 3rem);
+    z-index: 1;
+    margin: 0;
+    color: var(--ink-faint);
   }
 
   .opening__side {
+    grid-area: side;
+    grid-row: 1 / -1;
+    align-self: center;
     display: grid;
     gap: clamp(1.25rem, 2.5vw, 2.25rem);
-    margin-top: clamp(2rem, 6vw, 5rem);
   }
 
-  /* The anchor wrapping a collage frame. `display: block` is the whole rule:
+  /* The anchor wrapping a small frame. `display: block` is the whole rule:
      an inline anchor around a block figure sits on a text baseline and adds a
      few pixels of line-height under the image, which would shift the
      composition. Colour, decoration and the focus ring are inherited from
      global.css, so the frames look and behave exactly as they did. */
   .opening__link {
     display: block;
-  }
-
-  .opening__caption {
-    margin-top: 0.85rem;
-    color: var(--ink-faint);
-  }
-
-  /* vertical micro-rail in the left margin */
-  .rail {
-    position: absolute;
-    left: max(0.75rem, calc(var(--gutter) * 0.22));
-    top: clamp(14rem, 26vw, 22rem);
-    writing-mode: vertical-rl;
-    transform: rotate(180deg);
-    transform-origin: center;
-    font-family: var(--sans);
-    font-size: var(--fs-micro);
-    font-weight: 500;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--ink-faint);
-    white-space: nowrap;
-    pointer-events: none;
-  }
-
-  @media (max-width: 1360px) {
-    .rail {
-      display: none;
-    }
   }
 
   /* ------------------------------------------------------------- statement */
@@ -538,26 +594,60 @@ const stats = [
   /* ============================================================= tablet */
 
   @media (max-width: 1024px) {
+    /* No overlay on a narrow screen: title, then the photograph as the lead
+       image in the flow of the page, then the paragraph, then the two small
+       works side by side. */
+    .opening {
+      display: block;
+      min-height: 0;
+    }
+
     .opening__inner {
       grid-template-columns: minmax(0, 1fr);
       grid-template-areas:
         'head'
-        'collage'
-        'say';
+        'main'
+        'say'
+        'side';
       row-gap: clamp(2rem, 5vw, 3rem);
     }
 
-    .opening__collage {
-      grid-template-columns: 1.25fr 1fr;
+    /* the size the single column has always used */
+    .opening__name {
+      font-size: clamp(2.728rem, 7.5vw, 7.9rem);
+    }
+
+    .opening__main {
+      grid-area: main;
+      position: relative;
+      width: auto;
+    }
+
+    .opening__main :global(.media) {
+      height: auto;
+      aspect-ratio: var(--ratio);
+    }
+
+    .opening__main::after {
+      display: none;
+    }
+
+    .opening__main :global(.media__ph) {
+      place-items: center;
+      padding: 0;
+    }
+
+    .opening__caption {
+      position: static;
+      margin-top: 0.85rem;
     }
 
     .opening__side {
-      margin-top: clamp(1.5rem, 5vw, 3rem);
-    }
-
-    .opening__cta {
-      justify-content: flex-start;
-      padding-right: 0;
+      grid-row: side;
+      align-self: start;
+      grid-template-columns: 1fr 1fr;
+      align-items: start;
+      gap: clamp(0.75rem, 3vw, 1.25rem);
     }
 
     .say__quote {
@@ -600,28 +690,16 @@ const stats = [
       padding-bottom: clamp(3rem, 10vw, 4rem);
     }
 
-    /* the collage is recomposed, not collapsed: one lead image at full
-       width, then the two smaller works side by side underneath */
-    .opening__collage {
-      grid-template-columns: minmax(0, 1fr);
-      gap: clamp(1.25rem, 5vw, 2rem);
-    }
-
+    /* the collage is recomposed, not collapsed: one lead image, then the two
+       smaller works side by side underneath */
     .opening__main {
       padding-right: 12%;
     }
 
     .opening__side {
-      grid-template-columns: 1fr 1fr;
-      gap: clamp(0.75rem, 3vw, 1.25rem);
-      margin-top: 0;
       /* enough inset to keep the collage asymmetric, not so much that the
          two smaller works shrink out of the composition */
       padding-left: 11%;
-    }
-
-    .opening__statement {
-      font-size: clamp(1.35rem, 6.5vw, 1.9rem);
     }
 
     .spread {

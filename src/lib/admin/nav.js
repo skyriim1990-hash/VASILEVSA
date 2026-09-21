@@ -13,6 +13,7 @@
 
 export const ADMIN_NAV = [
   { label: 'Dashboard', href: '/admin', match: '/admin', exact: true },
+  { label: 'Homepage', href: '/admin/homepage', match: '/admin/homepage' },
   { label: 'Works', href: '/admin/works', match: '/admin/works' },
   { label: 'Exhibitions', href: '/admin/exhibitions', match: '/admin/exhibitions' },
   { label: 'Art × Sport', href: '/admin/art-sport', match: '/admin/art-sport' },

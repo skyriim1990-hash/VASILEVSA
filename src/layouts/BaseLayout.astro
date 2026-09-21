@@ -85,21 +85,34 @@ const personSchema = {
     </script>
 
     <!--
-      Type: one editorial display serif, one neutral grotesque.
+      Type: one neutral grotesque, at every size.
 
-      Instrument Serif carries the Latin display and has no Cyrillic, so
-      Prata — a didone of the same temperament — sits behind it in the stack
-      for the Bulgarian pages. Golos Text covers both scripts on its own, so
-      body copy never changes face mid-sentence around a Latin term.
+      Golos Text covers Latin and Cyrillic in one face, so nothing changes
+      shape mid-sentence around a Latin term and the display sizes are set in
+      the same family as the body copy. Two more families used to load here —
+      Instrument Serif for the Latin display and Prata behind it for Cyrillic,
+      which Instrument Serif does not carry. Nothing in the public stylesheets
+      asks for either any more, so neither is requested.
 
       Each subset ships with its own unicode-range, so an English page never
       downloads the Cyrillic files and vice versa.
+
+      The second request is for one character. Golos Text draws the arrow in
+      "Athlete → Movement → Paint", but none of the four standard subsets
+      covers U+2192, so the browser was quietly taking it from Helvetica or
+      Arial further down the stack. This adds the same family again, limited
+      by unicode-range to that one code point: it is fetched only on a page
+      that shows the arrow and changes nothing for any other character.
     -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500&family=Instrument+Serif:ital@0;1&family=Prata&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500&display=swap"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500&text=%E2%86%92&display=swap"
     />
 
     <script type="application/ld+json" set:html={JSON.stringify(personSchema)} />
