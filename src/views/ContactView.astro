@@ -1,17 +1,16 @@
 ---
-import ContactForm from '../components/ContactForm.astro';
 import { useTranslations } from '../i18n/utils.js';
 
 const { lang = 'en' } = Astro.props;
 const t = useTranslations(lang);
 
-const enquiries = [t('contact.e1'), t('contact.e2'), t('contact.e3'), t('contact.e4')];
+const email = t('contact.email');
 ---
 
 <section class="contact">
   <div class="shell">
     <div class="contact__row">
-      <p class="micro reveal">{t('nav.contact')}</p>
+      <p class="micro reveal">{t('contact.title')}</p>
       <p class="micro contact__loc reveal" data-delay="1">{t('site.location')}</p>
     </div>
 
@@ -20,19 +19,17 @@ const enquiries = [t('contact.e1'), t('contact.e2'), t('contact.e3'), t('contact
     </h1>
 
     <div class="contact__body">
-      <aside class="contact__aside">
-        <p class="body reveal">{t('contact.lead')}</p>
-
-        <ul class="contact__list reveal" data-delay="1">
-          {enquiries.map((e) => <li>{e}</li>)}
-        </ul>
-
-        <p class="contact__pending micro reveal" data-delay="2">{t('contact.detailsPending')}</p>
-      </aside>
-
-      <div class="contact__form reveal" data-delay="1">
-        <ContactForm lang={lang} />
+      <div class="contact__prose">
+        <p class="lead reveal">{t('contact.p1')}</p>
+        <p class="body reveal" data-delay="1">{t('contact.p2')}</p>
       </div>
+
+      <aside class="contact__aside reveal" data-delay="2">
+        <p class="micro contact__label">{t('contact.p3')}</p>
+        <p class="contact__email">
+          <a href={`mailto:${email}`}>{email}</a>
+        </p>
+      </aside>
     </div>
   </div>
 </section>
@@ -61,34 +58,51 @@ const enquiries = [t('contact.e1'), t('contact.e2'), t('contact.e3'), t('contact
     max-width: 14ch;
   }
 
+  /* The reading column leads; the address sits beside it as a colophon rather
+     than as a call to action. */
   .contact__body {
     display: grid;
-    grid-template-columns: minmax(0, 0.72fr) minmax(0, 1.28fr);
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
     gap: clamp(2.5rem, 6vw, 6rem);
     padding-top: clamp(3rem, 7vw, 6rem);
   }
 
-  .contact__list {
-    list-style: none;
-    margin: clamp(1.75rem, 3vw, 2.5rem) 0 0;
-    padding: 0;
-    border-top: 1px solid var(--rule);
+  .contact__prose {
+    max-width: 58ch;
   }
 
-  .contact__list li {
-    padding-block: 0.75rem;
-    border-bottom: 1px solid var(--rule);
-    font-size: var(--fs-small);
-    color: var(--ink);
+  .contact__prose .body {
+    margin-top: clamp(1.25rem, 2.4vw, 1.85rem);
+    color: var(--ink-soft);
   }
 
-  .contact__pending {
-    margin-top: clamp(1.5rem, 3vw, 2.25rem);
+  .contact__aside {
+    padding-top: 0.4rem;
+  }
+
+  .contact__label {
+    color: var(--ink-faint);
     letter-spacing: 0.08em;
     text-transform: none;
     line-height: 1.65;
-    color: var(--ink-faint);
-    max-width: 34ch;
+  }
+
+  .contact__email {
+    margin-top: clamp(0.85rem, 1.8vw, 1.25rem);
+    padding-top: clamp(0.85rem, 1.8vw, 1.25rem);
+    border-top: 1px solid var(--rule);
+    font-size: var(--fs-lead);
+    /* an address is a long unbroken token on a narrow screen */
+    overflow-wrap: anywhere;
+  }
+
+  .contact__email a {
+    color: var(--ink);
+    transition: color 400ms var(--ease);
+  }
+
+  .contact__email a:hover {
+    color: var(--accent-ink);
   }
 
   @media (max-width: 860px) {

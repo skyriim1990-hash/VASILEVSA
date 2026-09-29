@@ -43,6 +43,7 @@ import { publicUrl } from '../lib/supabase/storage.js';
 import {
   artworks as fallbackArtworks,
   CATEGORIES as FALLBACK_CATEGORIES,
+  PERIODS,
 } from './artworks.js';
 
 /* src/data/exhibitions.js is deliberately NOT imported. Its rows are prose
@@ -287,24 +288,29 @@ const hasRemoteExhibitions = Array.isArray(remote.exhibitions) && remote.exhibit
 export const exhibitions = hasRemoteExhibitions ? remote.exhibitions.map(toExhibition) : [];
 
 /**
- * The filter row.
+ * The filter row: the five periods, behind "All".
  *
- * `all` and `selected` are prepended and appended rather than stored: neither
- * is a category a work can belong to. Their labels are taken from the existing
- * CATEGORIES array so the wording is the project's own and not a new one
- * invented here.
+ * ---------------------------------------------------------------------------
+ * WHY THE DATABASE DOES NOT SIMPLY WIN HERE
+ * ---------------------------------------------------------------------------
+ * The periods are a closed vocabulary — the places the work was made in — so
+ * unlike a genre list they are not something an editor invents. A category row
+ * is therefore honoured when its slug is one of the five: the row's own label
+ * and order are used, so a period can still be renamed or reordered from the
+ * admin panel without a code change.
+ *
+ * A row with any other slug is ignored. That is what keeps the previous
+ * project's genre categories, which are still sitting in the table, off the
+ * public page without anyone having to delete them first.
  */
 const ALL = FALLBACK_CATEGORIES.find((c) => c.id === 'all');
-const SELECTED = FALLBACK_CATEGORIES.find((c) => c.id === 'selected');
+const isPeriod = new Set(PERIODS.map((p) => p.id));
 
-export const CATEGORIES =
-  Array.isArray(remote.categories) && remote.categories.length > 0
-    ? [
-        ALL,
-        ...remote.categories.map((c) => ({ id: c.slug, label: c.label })),
-        SELECTED,
-      ].filter(Boolean)
-    : FALLBACK_CATEGORIES;
+const remotePeriods = Array.isArray(remote.categories)
+  ? remote.categories.filter((c) => isPeriod.has(c.slug)).map((c) => ({ id: c.slug, label: c.label }))
+  : [];
+
+export const CATEGORIES = [ALL, ...(remotePeriods.length > 0 ? remotePeriods : PERIODS)];
 
 /* ---------------------------------------------------------------- helpers */
 /* Same signatures as the ones in artworks.js and exhibitions.js, so the call

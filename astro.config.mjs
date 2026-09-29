@@ -34,6 +34,13 @@ export default defineConfig({
   site: 'https://example.com',
   trailingSlash: 'ignore',
   adapter: vercel(),
+  /* The two routes the previous concept owned. Nothing external links to them,
+     but a redirect costs a line and means a shared URL still lands somewhere
+     that exists rather than on a 404. */
+  redirects: {
+    '/art-sport': '/periods',
+    '/exhibitions': '/periods',
+  },
   integrations: [
     /* The admin pages are server-rendered, so the sitemap integration never
        sees them and would not list them anyway. The filter is here as a

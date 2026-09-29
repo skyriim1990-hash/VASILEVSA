@@ -24,7 +24,7 @@
  * id          string   URL slug, must stay unique and stable
  * title       string   real title, or "" while unknown
  * year        string   real year, or "" while unknown
- * category    string   one of the CATEGORY ids below (used by the filters)
+ * category    string   one of the PERIOD ids below (used by the filters)
  * medium      string   e.g. "Oil on canvas", or "" while unknown
  * dimensions  string   e.g. "180 × 140 cm", or "" while unknown
  * image       string   path to the photograph, or "" for a placeholder
@@ -35,14 +35,27 @@
  * feature     boolean  true = allowed to occupy a large slot in the grid
  */
 
-export const CATEGORIES = [
-  { id: 'all', label: 'All' },
-  { id: 'paintings', label: 'Paintings' },
-  { id: 'action-painting', label: 'Action Painting' },
-  { id: 'figurative', label: 'Figurative' },
-  { id: 'abstract', label: 'Abstract' },
-  { id: 'selected', label: 'Selected Works' },
+/**
+ * The periods the archive is arranged by — the places Van Gogh worked, in the
+ * order he worked in them.
+ *
+ * This is a closed vocabulary, not an editorial list: a work belongs to the
+ * place it was made in, and there is no sixth place. Slugs carry no accent so
+ * they stay valid as URL fragments and as category slugs in the database; the
+ * label is where Saint-Rémy keeps its.
+ */
+export const PERIODS = [
+  { id: 'nuenen', label: 'Nuenen' },
+  { id: 'paris', label: 'Paris' },
+  { id: 'arles', label: 'Arles' },
+  { id: 'saint-remy', label: 'Saint-Rémy' },
+  { id: 'auvers', label: 'Auvers' },
 ];
+
+/* The filter row: the periods, behind the control that turns filtering off.
+   "All" is not a period — no work belongs to it — which is why it is added
+   here rather than living in the list above. */
+export const CATEGORIES = [{ id: 'all', label: 'All' }, ...PERIODS];
 
 export const artworks = [
   {

@@ -34,8 +34,7 @@ export function path(to, lang = DEFAULT_LANG) {
 /** The route map, so nav and footer never disagree about a URL. */
 export const ROUTES = [
   { key: 'nav.works', to: '/works' },
-  { key: 'nav.artsport', to: '/art-sport' },
-  { key: 'nav.exhibitions', to: '/exhibitions' },
+  { key: 'nav.periods', to: '/periods' },
   { key: 'nav.about', to: '/about' },
   { key: 'nav.contact', to: '/contact' },
 ];

@@ -1,7 +1,6 @@
 ---
 import PageHeader from '../components/PageHeader.astro';
 import ArtworkGrid from '../components/ArtworkGrid.astro';
-import Disclosure from '../components/Disclosure.astro';
 import { useTranslations } from '../i18n/utils.js';
 import { artworks, CATEGORIES } from '../data/content.js';
 
@@ -46,8 +45,6 @@ const filters = CATEGORIES.map((c) => ({
     <p class="works__empty" data-empty hidden>{t('works.empty')}</p>
   </div>
 </section>
-
-<Disclosure lang={lang} />
 
 <style>
   /* The grid sits on the secondary tone while the page header and the filter
@@ -147,11 +144,7 @@ const filters = CATEGORIES.map((c) => ({
   if (buttons.length && cells.length) {
     const countLabel = counter instanceof HTMLElement ? counter.dataset.label || '' : '';
 
-    const matches = (cell, filter) => {
-      if (filter === 'all') return true;
-      if (filter === 'selected') return cell.dataset.selected === 'true';
-      return cell.dataset.category === filter;
-    };
+    const matches = (cell, filter) => filter === 'all' || cell.dataset.category === filter;
 
     /**
      * `force` reveals every matching cell immediately.

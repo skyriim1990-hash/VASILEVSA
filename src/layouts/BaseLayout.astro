@@ -24,26 +24,17 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
    exists at /og-image.jpg, set this and the two tags below light up. */
 const ogImage = '';
 
-/* Structured data: only facts that were actually supplied. No awards,
-   no representation, no exhibition claims, no social profiles. */
+/* Structured data: verified historical facts only. `url` is deliberately
+   absent — pointing a Person record at this origin would claim the site as
+   Van Gogh's official page, which it is not. */
 const personSchema = {
   '@context': 'https://schema.org',
   '@type': 'Person',
-  name: 'Alexandre Vassilev-Vasilevsa',
-  jobTitle: 'Contemporary Artist',
-  nationality: 'Bulgarian',
-  url: canonical.origin,
-  address: {
-    '@type': 'PostalAddress',
-    addressLocality: 'London',
-    addressCountry: 'GB',
-  },
-  knowsAbout: [
-    'Contemporary Painting',
-    'Abstract Painting',
-    'Figurative Painting',
-    'Action Painting',
-  ],
+  name: 'Vincent van Gogh',
+  jobTitle: 'Painter',
+  nationality: 'Dutch',
+  birthDate: '1853-03-30',
+  deathDate: '1890-07-29',
 };
 ---
 
@@ -58,7 +49,7 @@ const personSchema = {
 
     <!-- Open Graph / social -->
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Alexandre Vassilev-Vasilevsa" />
+    <meta property="og:site_name" content={t('site.name')} />
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={metaDescription} />
     <meta property="og:url" content={canonical.href} />
@@ -97,22 +88,16 @@ const personSchema = {
       Each subset ships with its own unicode-range, so an English page never
       downloads the Cyrillic files and vice versa.
 
-      The second request is for one character. Golos Text draws the arrow in
-      "Athlete → Movement → Paint", but none of the four standard subsets
-      covers U+2192, so the browser was quietly taking it from Helvetica or
-      Arial further down the stack. This adds the same family again, limited
-      by unicode-range to that one code point: it is fetched only on a page
-      that shows the arrow and changes nothing for any other character.
+      A second request used to follow this one, for U+2192 alone, because a
+      line of copy on the old project page drew a literal arrow. No public
+      page sets that character any more — the arrow beside a link is a rule
+      and a rotated square in CSS — so the extra stylesheet is not requested.
     -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500&display=swap"
-    />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500&text=%E2%86%92&display=swap"
     />
 
     <script type="application/ld+json" set:html={JSON.stringify(personSchema)} />

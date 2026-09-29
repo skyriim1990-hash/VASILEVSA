@@ -19,8 +19,8 @@
      --accent-ink #B4501C    4.7 : 1   accent at text size       AA
 
      The brief's orange is kept exactly as specified for the display marks
-     it was chosen for — the period after the name, the × in Art × Champions,
-     the hairline rules. At 11px it only reaches 3:1, so anything set in the
+     it was chosen for — the period after the name, the hairline rules.
+     At 11px it only reaches 3:1, so anything set in the
      accent at text size uses --accent-ink, a darker step of the same hue.
      Same colour language, readable at small sizes. */
   /* Four steps of paper, lightest to deepest. --paper is the page; --warm is
@@ -280,20 +280,11 @@ h3,
 }
 
 /* The period after the wordmark. At 11px in the header and footer it is
-   text-sized and takes the readable step; the two display-sized uses —
-   the homepage heading and the Art × Champions title — override this back to the
+   text-sized and takes the readable step; the display-sized uses — the
+   homepage name and the Periods title — override this back to the
    full-strength accent in their own stylesheets. */
 .dot {
   color: var(--accent-ink);
-}
-
-/* The × in the Art × Champions title. It used to be set in the serif italic;
-   Golos Text ships no italic cut, so asking for one would leave the browser to
-   synthesise a slant. Upright in the one family, as the title's own stylesheet
-   already forced it to be. */
-.amp {
-  font-family: var(--sans);
-  font-style: normal;
 }
 
 /* ---------------------------------------------------------------- layout */
@@ -487,8 +478,8 @@ h3,
 
    The mask is the line box, and the display and h1 steps set their leading
    under 1 — 0.97 and 0.98 — so the tails of y, g and p reach about 0.11em
-   below it and were being cut off ("Beyond", "painting", "Bulgaria",
-   "Champions"). The padding lets the mask reach 0.14em further down, which
+   below it and were being cut off ("van Gogh" is the live case).
+   The padding lets the mask reach 0.14em further down, which
    clears the deepest tail, and the equal negative margin gives that space
    straight back, so no line and nothing below the heading moves. It stays
    under the roughly 0.17em at which the top of a letter still waiting below

@@ -60,7 +60,7 @@ function orientation(ratio) {
 <div class="works-grid" data-grid>
   {
     items.map((artwork, i) => (
-      <div class="works-grid__cell reveal" data-category={artwork.category} data-selected={artwork.selected ? 'true' : 'false'} data-orient={orientation(artwork.ratio)} data-delay={String((i % 3) + 1)}>
+      <div class="works-grid__cell reveal" data-category={artwork.category} data-orient={orientation(artwork.ratio)} data-delay={String((i % 3) + 1)}>
         <ArtworkCard artwork={artwork} index={artworkIndex(artwork.id)} lang={lang} />
       </div>
     ))

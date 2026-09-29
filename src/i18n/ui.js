@@ -3,15 +3,14 @@
  *
  * Every string on the site lives here rather than hardcoded in components.
  *
- * Only verified biographical facts are used:
- *   - Bulgarian-born, based in London
- *   - a stay in New York in the late 1990s, and the influence of American
- *     Abstract Expressionism (Hofmann, Gorky, Pollock, Rothko)
- *   - a mosaic-like approach joining figurative and abstract qualities
- *   - Art × Sport, developed mainly 2014–2015, 400+ works, with world and
- *     Olympic champions taking physical part in the making
+ * This is a fictional concept project: an editorial archive built around
+ * Vincent van Gogh (1853–1890). It is not affiliated with the Van Gogh Museum
+ * or any other institution and must never read as an official one.
  *
- * Nothing else is asserted. Unknown data is rendered as a marked placeholder.
+ * Only verified historical facts are asserted — no invented quotes, exhibitions,
+ * biography or provenance. The period and biography copy below follows the Van
+ * Gogh Museum's own biography pages and the National Gallery's artist page.
+ * Unknown data is rendered as a marked placeholder.
  */
 
 export const DEFAULT_LANG = 'en';
@@ -19,18 +18,25 @@ export const DEFAULT_LANG = 'en';
 export const ui = {
   en: {
     // ---------------------------------------------------------------- meta
-    'site.name': 'Alexandre Vassilev-Vasilevsa',
-    'site.shortName': 'AV',
-    'site.role': 'Contemporary Artist',
-    'site.location': 'London, United Kingdom',
-    'meta.title': 'Alexandre Vassilev-Vasilevsa | Contemporary Artist',
+    'site.name': 'Vincent van Gogh',
+    'site.shortName': 'VvG',
+    'site.role': 'Post-Impressionist Painter',
+    'site.location': 'Netherlands · France',
+    'meta.title': 'Vincent van Gogh — Works & Paintings | Concept Archive',
     'meta.description':
-      'Bulgarian-born, London-based contemporary artist working across abstraction, figurative painting, action painting and Art × Champions.',
+      'An independent concept archive of ten paintings by Vincent van Gogh, traced through the places where he worked.',
+    'meta.works':
+      'Ten paintings by Vincent van Gogh, arranged by the places where he worked. An independent concept archive.',
+    'meta.periods':
+      'Nuenen, Paris, Arles, Saint-Rémy and Auvers — five places traced through Vincent van Gogh’s work.',
+    'meta.about':
+      'Dutch painter, 1853–1890. A concise factual outline within an independent concept portfolio project.',
+    'meta.contact':
+      'An independent concept portfolio built around the work of Vincent van Gogh. Not an official site.',
 
     // ---------------------------------------------------------------- nav
     'nav.works': 'Works',
-    'nav.artsport': 'Art × Champions',
-    'nav.exhibitions': 'Certified Prints',
+    'nav.periods': 'Periods',
     'nav.about': 'About',
     'nav.contact': 'Contact',
     'nav.menu': 'Menu',
@@ -50,161 +56,117 @@ export const ui = {
     // ---------------------------------------------------------------- placeholders
     'ph.artwork': 'Artwork placeholder',
     'ph.short': 'Placeholder',
-    'ph.artsport': 'Art × Champions image placeholder',
-    'ph.portrait': 'Artist portrait placeholder',
-    'ph.video': 'Video placeholder',
     'ph.awaiting': 'Awaiting photography',
-    'ph.awaitingVideo': 'Reserved for film',
-    'ph.note':
-      'Marked placeholders stand in for photography that has not been supplied yet. They demonstrate composition, proportion and rhythm only — they are not works by the artist.',
+
+    // ---------------------------------------------------------------- disclosure
+    /* The short line sits in the footer, so it is on every page. The long one
+       is carried in prose by About and by the project page. */
+    'disclosure.short':
+      'An independent concept project — not an official Van Gogh site, and not affiliated with any institution named in it.',
 
     // ---------------------------------------------------------------- home
-    'home.eyebrow': 'Contemporary artist — Bulgaria / London',
+    'home.eyebrow': 'Concept archive — Netherlands / France',
     /* The homepage title, one key per line. The full stop after the second
        line is not part of the string — HomeView sets it in the accent. */
-    'home.title1': 'Organic Tessellated',
-    'home.title2': 'Abstraction',
+    'home.title1': 'Vincent',
+    'home.title2': 'van Gogh',
+    'home.statement': 'Dutch painter, 1853–1890.',
     'home.lead':
-      'Vasilevsa’s Organic Tessellated Abstraction transforms the painted surface into a densely interconnected field of irregular chromatic fragments. Dark linear structures separate and simultaneously connect the individual forms, while impasto and relief-like textures give the works a tactile, almost archaeological character. The resulting compositions exist between painting, mosaic, drawing and low relief, balancing controlled structure with apparent visual chaos.',
-    'home.quote': 'Painting as an act, not an object.',
-    'home.quoteNote':
-      'The work begins with the body — with movement, pressure and the moment paint meets surface.',
+      'Vincent van Gogh painted for roughly the last decade of his life, working first in the Netherlands and then in France. This is a concept archive of selected paintings from those years.',
     'home.selected': 'Selected works',
-    'home.selectedNote': 'A shortlist from across the practice.',
-    'home.artsportTitle': 'Art × Champions',
-    'home.artsportLead':
-      'World and Olympic champions take physical part in the making of a painting — movement, touch and paint recorded directly on the canvas.',
-    'home.artsportCta': 'Enter Art × Champions',
-    'home.aboutTitle': 'Born in Bulgaria. Based in London. Shaped by New York.',
+    'home.selectedNote': 'A shortlist from across the archive.',
+    'home.periodsLabel': 'Periods',
+    'home.periodsNote': 'Five places. One decade of painting.',
+    'home.periodsCta': 'View the periods',
+    'home.aboutTitle': 'Ten paintings, five places.',
     'home.aboutLead':
-      'A stay in New York in the late 1990s opened his work to American Abstract Expressionism, and to a way of painting where energy is the subject.',
-    'home.aboutCta': 'About the artist',
+      'An independent concept archive built around Van Gogh’s work. Titles, dates, media and dimensions follow the records of the museums that hold the paintings.',
+    'home.aboutCta': 'About the archive',
 
     // ---------------------------------------------------------------- works
     'works.title': 'Works',
     'works.lead':
-      'Paintings across abstraction, figuration and action painting. The archive is being catalogued; images and details will follow.',
-    'works.filterLabel': 'Filter works by category',
+      'Paintings arranged by the places they were made in.',
+    'works.filterLabel': 'Filter works by period',
     'works.count': 'works',
-    'works.empty': 'No works in this category yet.',
+    'works.empty': 'No works from this period yet.',
 
     // ---------------------------------------------------------------- detail
     'detail.year': 'Year',
     'detail.medium': 'Medium',
     'detail.dimensions': 'Dimensions',
-    'detail.category': 'Category',
+    'detail.period': 'Period',
     'detail.about': 'About the work',
     'detail.pendingNote':
       'Full details for this work will be published once the archive entry is complete.',
-    'detail.enquire': 'Enquire about this work',
+    'detail.enquire': 'About this project',
 
-    // ---------------------------------------------------------------- art × sport
-    'as.title': 'Art × Champions',
-    'as.chain': 'Athlete → Movement → Paint → Canvas → Artwork',
-    'as.lead':
-      'A body of work in which sport is not the subject of the painting but its source. World and Olympic champions take physical part in the making — the same movement that wins a title leaves its trace in paint.',
-    'as.stat1n': '400+',
-    'as.stat1l': 'Paintings created',
-    'as.stat2n': '2014—2015',
-    'as.stat2l': 'Principal period',
-    'as.stat3n': 'World & Olympic',
-    'as.stat3l': 'Champions involved',
-    'as.ch1t': 'Movement',
-    'as.ch1b':
-      'It starts before the paint. A trained body carries a way of moving that belongs to it alone — a rhythm, a weight, a direction. That is the material the work is made from.',
-    'as.ch2t': 'The act',
-    'as.ch2b':
-      'Hands, paint, surface. The gesture is not described afterwards; it is performed once and stays as it fell. Nothing is corrected back into place.',
-    'as.ch3t': 'The athlete',
-    'as.ch3b':
-      'The champion is not a model and not a guest. They enter the work physically, and what they bring cannot be reproduced by the painter alone.',
-    'as.ch4t': 'The canvas',
-    'as.ch4b':
-      'The surface receives contact rather than depiction. Pressure, speed and hesitation are all legible in what is left behind.',
-    'as.ch5t': 'The artwork',
-    'as.ch5b':
-      'What remains is a record of an event. The painting holds a movement that happened once, at a particular moment, between particular people.',
-    'as.ch6t': 'The result',
-    'as.ch6b': 'Selected works from the series.',
-    'as.filmTitle': 'Film',
-    'as.filmNote':
-      'This area is reserved for documentation of the process. Film will be added when supplied.',
+    // ---------------------------------------------------------------- periods
+    'periods.title': 'Periods',
+    'periods.lead': 'A decade of painting, traced through five places.',
+
+    'periods.p1name': 'Nuenen',
+    'periods.p1dates': '1883–1885',
+    'periods.p1place': 'the Netherlands',
+    'periods.p1body':
+      'Van Gogh moved back into his parents’ house in Nuenen in 1883 and spent two years painting the people who worked around the village — weavers at their looms, farmers in the fields. The palette is earth and shadow. The Potato Eaters, painted in April and May 1885, closes the period.',
+
+    'periods.p2name': 'Paris',
+    'periods.p2dates': '1886–1888',
+    'periods.p2place': 'France',
+    'periods.p2body':
+      'Two years in Paris. Van Gogh saw Impressionist and Post-Impressionist painting at close range and lightened his palette. He painted a great many self-portraits in these years, using them as practice.',
+
+    'periods.p3name': 'Arles',
+    'periods.p3dates': '1888–1889',
+    'periods.p3place': 'Provence',
+    'periods.p3body':
+      'He went south to Arles in 1888. He rented four rooms in a house on the Place Lamartine — the Yellow House — hoping to make it a studio where painters could work alongside one another. Paul Gauguin arrived at the end of October 1888 and stayed until December. Here the brushwork loosens and the colour opens up.',
+
+    'periods.p4name': 'Saint-Rémy',
+    'periods.p4dates': '1889–1890',
+    'periods.p4place': 'Saint-Rémy-de-Provence',
+    'periods.p4body':
+      'In May 1889 Van Gogh admitted himself to the hospital at Saint-Paul-de-Mausole. He stayed a year and worked steadily through it — around 150 paintings — from the garden, the enclosed field and the country around the building.',
+
+    'periods.p5name': 'Auvers',
+    'periods.p5dates': '1890',
+    'periods.p5place': 'Auvers-sur-Oise',
+    'periods.p5body':
+      'He left Saint-Rémy in May 1890 for Auvers-sur-Oise, a village north of Paris where other painters had settled. He worked at close to a canvas a day, mostly the gardens and wheatfields around the village. He died there on 29 July 1890.',
 
     // ---------------------------------------------------------------- about
     'about.title': 'About',
-    'about.statement': 'Born in Bulgaria. Based in London. Shaped by New York.',
-    'about.introTitle': 'Introduction',
-    'about.intro1':
-      'Alexandre Vassilev-Vasilevsa is a Bulgarian-born contemporary artist living and working in London. He paints across contemporary, abstract and figurative registers, and works in action painting and in the Art × Champions series.',
-    'about.intro2':
-      'His visual language turns on movement, energy, colour and gesture — on painting understood as something done rather than something arranged.',
-    'about.bioTitle': 'Biography',
-    'about.bio1':
-      'A stay in New York in the late 1990s marked a turn in his development and opened his interest in American Abstract Expressionism, including the work of Hans Hofmann, Arshile Gorky, Jackson Pollock and Mark Rothko.',
-    'about.bio2':
-      'From that encounter he built a recognisable mosaic-like approach: a technique in which figurative and abstract qualities are held in the same surface rather than kept apart.',
-    'about.philTitle': 'Philosophy',
-    'about.phil1':
-      'Emotion, the subconscious and freedom run through the work. Painting is treated as visual communication — a direct exchange that does not pass through explanation first.',
-    'about.phil2':
-      'Colour carries energy. Gesture carries the body. What the painting records is the moment the two met.',
-    'about.practiceTitle': 'Practice',
-    'about.practice1':
-      'The mosaic-like method builds an image out of accumulated marks. Read close, the surface breaks into fragments of colour; read at distance, figure and field resolve into one another.',
-    'about.asTitle': 'Art × Champions',
-    'about.as1':
-      'The Art × Champions project, developed mainly across 2014 and 2015, brought world and Olympic champions into the physical making of paintings through movement, touch and direct work with paint. More than 400 works have been produced within this direction.',
-    'about.asCta': 'See the project',
+    /* Set one sentence per line by AboutView, which splits on the full stop. */
+    'about.statement':
+      'Dutch painter. 1853–1890. About ten years of work, in the Netherlands and in France.',
+    'about.b1title': 'The work',
+    'about.b1':
+      'Van Gogh decided to become a painter at twenty-seven, after trying the art trade, schoolteaching and lay preaching. He took lessons from the painter Anton Mauve in The Hague and spent a short period at the academy in Antwerp. In the decade that followed he made more than 850 paintings and close to 1,300 works on paper.',
+    'about.b2title': 'From dark to light',
+    'about.b2':
+      'The early Dutch paintings are built from earth colours and shadow: weavers, farmers, the insides of working houses. Paris changed that. Seeing Impressionist and Post-Impressionist work at close range, he lightened his palette. In Arles his style became looser and more expressive.',
+    'about.b3title': 'Places',
+    'about.b3':
+      'Five places shape this archive. Nuenen, where he painted the people who worked around his parents’ village. Paris, where the palette changed. Arles, where he rented the Yellow House and hoped to start a studio for painters working together. Saint-Rémy, where he spent a year at the hospital of Saint-Paul-de-Mausole and kept working throughout. And Auvers-sur-Oise, where he painted almost daily until his death in July 1890.',
+    'about.b4title': 'About this archive',
+    'about.b4':
+      'This is an independent concept project: a design and development exercise, not an institutional publication. The paintings are public-domain reproductions. Titles, dates, media and dimensions follow the records of the museums that hold the works.',
 
-    // ---------------------------------------------------------------- exhibitions
-    'ex.title': 'Certified Prints',
-    'ex.lead':
-      'Certified prints of selected works, available for enquiry.',
-    /* Shown in place of the timeline while the database holds no published
-       exhibitions. `ex.notice` below described the placeholder rows and is no
-       longer rendered anywhere — the rows it referred to are gone. */
-    'ex.empty':
-      'Certified prints of selected works, available for enquiry.',
-    'ex.notice':
-      'Exhibition history has not been supplied yet. The entries below are marked placeholders showing how real records will appear.',
-    'ex.solo': 'Solo',
-    'ex.group': 'Group',
-    'ex.venue': 'Venue',
-    'ex.location': 'Location',
-    'ex.phTitle': 'Exhibition title',
-    'ex.phVenue': 'Gallery or institution',
-    'ex.type': 'Type',
-
-    // ---------------------------------------------------------------- contact
-    'contact.title': "Let's talk about art.",
-    'contact.lead':
-      'For certified prints, collaborations, acquisitions and professional enquiries.',
-    'contact.e1': 'Exhibition enquiries',
-    'contact.e2': 'Collaborations',
-    'contact.e3': 'Acquisitions',
-    'contact.e4': 'Professional enquiries',
-    'contact.name': 'Name',
-    'contact.email': 'Email',
-    'contact.subject': 'Subject',
-    'contact.message': 'Message',
-    'contact.send': 'Send enquiry',
-    'contact.sending': 'Sending…',
-    'contact.sent': 'Thank you — your enquiry has been sent.',
-    'contact.failed': 'The enquiry could not be sent. Please try again.',
-    'contact.required': 'required',
-    'contact.selectSubject': 'Select a subject',
-    'contact.notConfigured':
-      'This form is not connected to a mailbox yet. Provide a delivery address or form endpoint and it will start sending.',
-    'contact.detailsPending':
-      'Contact details will be published once confirmed.',
+    // ---------------------------------------------------------------- project page
+    'contact.title': 'About this project',
+    'contact.p1':
+      'This site is an independent concept portfolio — a design and development exercise built around the work of Vincent van Gogh. It is not connected to any museum, foundation or estate, and nothing here is for sale.',
+    'contact.p2':
+      'The paintings are public-domain reproductions from Wikimedia Commons. Catalogue data follows the records of the institutions that hold the originals.',
+    'contact.p3': 'For questions about the design or the build:',
+    'contact.email': 'skyriim1990@gmail.com',
 
     // ---------------------------------------------------------------- footer
-    'footer.tagline': 'Painting as movement. Colour as energy.',
+    'footer.dates': '1853–1890',
     'footer.nav': 'Navigate',
     'footer.privacy': 'Privacy',
     'footer.terms': 'Terms',
-    'footer.rights': 'All rights reserved.',
-    'footer.credit': 'Site in development — placeholder imagery.',
 
     // ---------------------------------------------------------------- legal
     'legal.privacy': 'Privacy',

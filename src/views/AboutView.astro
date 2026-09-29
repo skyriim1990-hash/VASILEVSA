@@ -1,9 +1,8 @@
 ---
 import Media from '../components/Media.astro';
-import Disclosure from '../components/Disclosure.astro';
-/* `path` is no longer imported: the only call was the "See the project" link
-   in the Art × Sport teaser. */
 import { useTranslations } from '../i18n/utils.js';
+import { artworks, artworkIndex } from '../data/content.js';
+import { displayAlt } from '../utils/display.js';
 
 const { lang = 'en' } = Astro.props;
 const t = useTranslations(lang);
@@ -16,12 +15,18 @@ const statementLines = t('about.statement')
   .split(/(?<=\.)\s+/)
   .filter(Boolean);
 
+/* The portrait is the self-portrait already in the archive, resolved by slug
+   the way the homepage resolves its opening collage. Until that work is
+   imported the frame keeps the marked placeholder it has always had. */
+const portrait = artworks.find((a) => a.id === 'self-portrait-with-grey-felt-hat' && a.image) ?? null;
+const portraitAlt = portrait ? displayAlt(portrait, t, artworkIndex(portrait.id)) : '';
+
 /* Only the facts that were supplied. Nothing is extrapolated. */
-const sections = [
-  { k: 'intro', title: t('about.introTitle'), body: [t('about.intro1'), t('about.intro2')] },
-  { k: 'bio', title: t('about.bioTitle'), body: [t('about.bio1'), t('about.bio2')] },
-  { k: 'phil', title: t('about.philTitle'), body: [t('about.phil1'), t('about.phil2')] },
-  { k: 'practice', title: t('about.practiceTitle'), body: [t('about.practice1')] },
+const blocks = [
+  { title: t('about.b1title'), body: t('about.b1') },
+  { title: t('about.b2title'), body: t('about.b2') },
+  { title: t('about.b3title'), body: t('about.b3') },
+  { title: t('about.b4title'), body: t('about.b4') },
 ];
 ---
 
@@ -47,19 +52,20 @@ const sections = [
   <div class="shell about-open__spread">
     <div class="about-open__portrait reveal">
       <Media
-        ratio="4 / 5"
-        label={t('ph.portrait')}
+        src={portrait?.image ?? ''}
+        alt={portraitAlt}
+        ratio={portrait?.ratio || '4 / 5'}
+        label={t('ph.artwork')}
         tone={2}
         kind="portrait"
-        note={t('ph.awaiting')}
+        note={portrait ? '' : t('ph.awaiting')}
         priority={true}
         sizes="(max-width: 860px) 78vw, 34vw"
       />
     </div>
 
     <div class="about-open__side">
-      <p class="lead reveal" data-delay="1">{t('about.intro1')}</p>
-      <p class="body reveal" data-delay="2">{t('about.intro2')}</p>
+      <p class="lead reveal" data-delay="1">{blocks[0].body}</p>
     </div>
   </div>
 </section>
@@ -68,34 +74,17 @@ const sections = [
 <section class="section about-text on-tone" aria-label={t('about.title')}>
   <div class="shell">
     {
-      sections.slice(1).map((s) => (
+      blocks.slice(1).map((b) => (
         <article class="chunk">
-          <h2 class="micro chunk__label reveal">{s.title}</h2>
+          <h2 class="micro chunk__label reveal">{b.title}</h2>
           <div class="chunk__body">
-            {s.body.map((p, i) => (
-              <p class:list={[i === 0 ? 'chunk__lead' : 'body', 'reveal']} data-delay={String(i + 1)}>
-                {p}
-              </p>
-            ))}
+            <p class="chunk__lead reveal" data-delay="1">{b.body}</p>
           </div>
         </article>
       ))
     }
   </div>
 </section>
-
-{/* Art × Sport had a teaser section here: the chain line, a heading, a
-    paragraph, a "See the project" link and a placeholder frame. It has been
-    removed — the project has its own page at /art-sport and its own entry in
-    the navigation, and repeating it at the foot of About made the biography
-    end on somebody else's subject. Nothing about the project was deleted:
-    src/views/ArtSportView.astro and the about.as* strings in src/i18n/ui.js
-    are untouched.
-
-    Written as a JSX comment, not an HTML one — Astro emits <!-- --> into the
-    built page, and the note would have shipped to every visitor. */}
-
-<Disclosure lang={lang} />
 
 <style>
   /* ------------------------------------------------------------- opening */
@@ -117,9 +106,19 @@ const sections = [
     color: var(--ink-faint);
   }
 
+  /* Three sentences, one per masked line. The measure was 16ch, written for a
+     statement whose longest sentence was two words; the sentence here is 58
+     characters and broke across four lines inside it, so the heading read as
+     six ragged lines rather than three.
+
+     Two changes carry it: the measure opens up to the column, and the step
+     comes down from --fs-h1. At the h1 size no container inside the shell can
+     hold 58 characters in two lines — the arithmetic simply does not work — so
+     the size is what has to give. It is still the largest type on the page. */
   .about-open__statement {
     padding-top: clamp(1.75rem, 4vw, 3rem);
-    max-width: 16ch;
+    font-size: clamp(1.65rem, 4.2vw, 3.6rem);
+    max-width: 30ch;
   }
 
   .about-open__spread {

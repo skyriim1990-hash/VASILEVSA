@@ -2,10 +2,8 @@
 import Media from '../components/Media.astro';
 import ArtworkCard from '../components/ArtworkCard.astro';
 import SectionHeader from '../components/SectionHeader.astro';
-import Statistics from '../components/Statistics.astro';
-import Disclosure from '../components/Disclosure.astro';
 import { useTranslations, path } from '../i18n/utils.js';
-import { homepageArtworks, artworkIndex, homepage } from '../data/content.js';
+import { artworks, homepageArtworks, artworkIndex } from '../data/content.js';
 import { displayAlt, displayTitle } from '../utils/display.js';
 
 const { lang = 'en' } = Astro.props;
@@ -17,83 +15,75 @@ const t = useTranslations(lang);
 const shortlist = homepageArtworks(4);
 
 /**
- * One slot of the opening collage.
+ * The three works of the opening collage, in the order the composition places
+ * them: one large frame, then the two smaller ones beside it.
  *
- * The alt text is derived from the work itself once there is a photograph to
- * describe. It used to be the placeholder label in every case, which meant a
- * real painting was announced to a screen reader as "Artwork placeholder 03".
- * `label` and `index` are still passed to Media and still used — but only by
- * its placeholder branch, when there is no image.
+ * Each is resolved from the archive by slug. Until those works are imported,
+ * the frame stands as a marked placeholder carrying the title of the painting
+ * that belongs in it, in the proportions that painting's frame will keep — so
+ * importing them changes the pictures and nothing about the layout.
+ *
+ * The image slots in Admin → Homepage are deliberately not read here: they
+ * still hold the previous project's demo files, which do not belong to this
+ * archive. Reconnecting that override is a decision for when the real files
+ * are uploaded.
  */
-const slot = (i) => {
-  const artwork = shortlist[i];
-  const index = artworkIndex(artwork?.id ?? '');
+const HERO = [
+  { slug: 'sunflowers', title: 'Sunflowers', ratio: '3 / 4', tone: 1 },
+  { slug: 'irises', title: 'Irises', ratio: '4 / 3', tone: 3 },
+  /* 5 / 4 rather than a square: the painting is 1.263 wide, and a 1:1 frame
+     cropped a fifth of its width, taking the moon with it. */
+  { slug: 'the-starry-night', title: 'The Starry Night', ratio: '5 / 4', tone: 2 },
+];
+
+const heroSlot = (spec) => {
+  const work = artworks.find((a) => a.id === spec.slug && a.image);
+  const index = work ? artworkIndex(work.id) : '';
 
   return {
-    src: artwork?.image ?? '',
-    alt: artwork ? displayAlt(artwork, t, index) : '',
-    index,
+    ...spec,
+    src: work?.image ?? '',
+    alt: work ? displayAlt(work, t, index) : '',
     /* The route is the same one ArtworkCard builds for the spread below, via
        the same helper, so the two halves of the page cannot disagree about a
        work's URL. Empty while the slot has no work — see linkFor. */
-    href: artwork ? path(`/works/${artwork.id}`, lang) : '',
-    label: artwork ? displayTitle(artwork, t, index) : '',
-  };
-};
-
-/* An image chosen in Admin → Homepage takes its frame; a frame with nothing
-   chosen keeps what slot() gives it. When the chosen file is also a published
-   work's photograph, the frame links to that work, as the default ones do. */
-const chosen = (img, fallback) => {
-  if (!img) return fallback;
-  const work = img.artwork;
-  const index = work ? artworkIndex(work.id) : fallback.index;
-  return {
-    src: img.src,
-    alt: img.alt || (work ? displayAlt(work, t, index) : ''),
-    index,
     href: work ? path(`/works/${work.id}`, lang) : '',
-    label: work ? displayTitle(work, t, index) : '',
+    label: work ? displayTitle(work, t, index) : spec.title,
   };
 };
 
-const [main, sideTop, sideBottom] = [
-  chosen(homepage.images.large, slot(0)),
-  chosen(homepage.images.small1, slot(1)),
-  chosen(homepage.images.small2, slot(2)),
-];
+const [main, sideTop, sideBottom] = HERO.map(heroSlot);
 
 /**
  * Wraps a collage frame in a link, or in nothing.
  *
  * An `a` when the slot holds a work, a Fragment when it does not. A frame
- * showing "ARTWORK PLACEHOLDER" has no detail page to open, and an anchor
+ * still waiting for its painting has no detail page to open, and an anchor
  * pointing at one would be a focus stop that leads to a 404 — worse than not
  * being a link at all.
  *
  * The spread below already links, because ArtworkCard is itself an anchor.
- * This is only about the two small frames of the opening collage — the large
- * one sits behind the title and is never a link.
  */
 const linkFor = (s) =>
   s.href
     ? { Tag: 'a', attrs: { href: s.href, 'aria-label': s.label, class: 'opening__link' } }
     : { Tag: Fragment, attrs: {} };
 
+const mainLink = linkFor(main);
 const sideTopLink = linkFor(sideTop);
 const sideBottomLink = linkFor(sideBottom);
 
-const stats = [
-  { n: t('as.stat1n'), l: t('as.stat1l') },
-  { n: t('as.stat2n'), l: t('as.stat2l') },
-  { n: t('as.stat3n'), l: t('as.stat3l') },
-];
+/* The About teaser's portrait, resolved by slug like the collage above. */
+const portrait = artworks.find((a) => a.id === 'self-portrait-with-grey-felt-hat' && a.image) ?? null;
+const portraitAlt = portrait ? displayAlt(portrait, t, artworkIndex(portrait.id)) : '';
 ---
 
 <!-- ================================================== OPENING SPREAD -->
 <section class="opening">
   <div class="shell opening__inner">
     <div class="opening__head">
+      <p class="micro reveal">{t('home.eyebrow')}</p>
+
       <h1 class="opening__name display">
         <span class="reveal-line"><span>{t('home.title1')}</span></span>
         <span class="reveal-line" data-delay="1"><span>{t('home.title2')}<span class="dot">.</span></span></span>
@@ -101,26 +91,40 @@ const stats = [
     </div>
 
     <div class="opening__say">
+      <p class="opening__statement serif reveal">{t('home.statement')}</p>
+
+      {/* A short accent rule between the statement and the prose. It does the
+          job a paragraph break cannot: marks where the voice changes from the
+          plain fact to the site describing what it holds. Decorative, so it is
+          a span rather than an <hr> — an <hr> is a thematic break and a screen
+          reader would announce it. */}
+      <span class="opening__rule reveal" data-delay="1" aria-hidden="true"></span>
+
       <p class="body opening__intro reveal" data-delay="2">{t('home.lead')}</p>
+
+      <div class="opening__cta reveal" data-delay="3">
+        <a class="link" href={path('/works', lang)}>
+          <span>{t('common.viewAll')}</span>
+          <span class="link__arrow" aria-hidden="true"></span>
+        </a>
+      </div>
     </div>
 
     <div class="opening__collage">
-      {/* The large image is the ground the title stands on, not a link: an
-          anchor behind the text would take every click aimed at the words.
-          On desktop it is the full-bleed field; below 1025px it is the lead
-          image under the title. */}
       <div class="opening__main reveal">
-        <Media
-          src={main.src}
-          alt={main.alt}
-          ratio="4 / 3"
-          label={t('ph.artwork')}
-          index={main.index}
-          tone={1}
-          priority={true}
-          sizes="(max-width: 1024px) 100vw, 76vw"
-        />
-        {/* "Awaiting photography" under an actual photograph contradicts
+        <mainLink.Tag {...mainLink.attrs}>
+          <Media
+            src={main.src}
+            alt={main.alt}
+            ratio={main.ratio}
+            label={main.title}
+            shortLabel={main.title}
+            tone={main.tone}
+            priority={true}
+            sizes="(max-width: 760px) 92vw, 30vw"
+          />
+        </mainLink.Tag>
+        {/* "Awaiting photography" under an actual painting contradicts
             itself. The caption belongs to the empty state only. */}
         {!main.src && <p class="opening__caption micro">{t('ph.awaiting')}</p>}
       </div>
@@ -131,10 +135,10 @@ const stats = [
             <Media
               src={sideTop.src}
               alt={sideTop.alt}
-              ratio="4 / 3"
-              label={t('ph.artwork')}
-              index={sideTop.index}
-              tone={3}
+              ratio={sideTop.ratio}
+              label={sideTop.title}
+              shortLabel={sideTop.title}
+              tone={sideTop.tone}
               sizes="(max-width: 760px) 45vw, 22vw"
             />
           </sideTopLink.Tag>
@@ -144,27 +148,16 @@ const stats = [
             <Media
               src={sideBottom.src}
               alt={sideBottom.alt}
-              ratio="1 / 1"
-              label={t('ph.artwork')}
-              index={sideBottom.index}
-              tone={2}
+              ratio={sideBottom.ratio}
+              label={sideBottom.title}
+              shortLabel={sideBottom.title}
+              tone={sideBottom.tone}
               sizes="(max-width: 760px) 45vw, 22vw"
             />
           </sideBottomLink.Tag>
         </div>
       </div>
     </div>
-  </div>
-</section>
-
-<!-- ================================================== STATEMENT -->
-<section class="say section--tight home-field on-tone">
-  <div class="shell">
-    <hr class="rule" />
-    <blockquote class="say__quote">
-      <p class="h1 reveal">{t('home.quote')}</p>
-      <footer class="say__note body reveal" data-delay="1">{t('home.quoteNote')}</footer>
-    </blockquote>
   </div>
 </section>
 
@@ -198,42 +191,21 @@ const stats = [
   </div>
 </section>
 
-<!-- ================================================== ART × SPORT -->
-<section class="as-band on-tone" aria-labelledby="as-title">
-  {/* Text left, one dominant image right — a project introduction rather than
-      a banner with figures under it. The band used to run title, then a 21:9
-      strip across the full width, then the statistics, then the link: four
-      stacked full-width rows, which is the shape of a dashboard. The facts are
-      unchanged and still present; they now sit inside the reading column where
-      they read as detail, not as a metrics panel. */}
-  <div class="shell as-band__inner">
-    <div class="as-band__text">
-      <p class="micro micro--accent reveal">{t('as.chain')}</p>
-      <h2 class="h1 as-band__title reveal" id="as-title" data-delay="1">{t('home.artsportTitle')}</h2>
-      <p class="lead as-band__lead reveal" data-delay="2">{t('home.artsportLead')}</p>
+<!-- ================================================== PERIODS -->
+{/* One line and a link, on its own sheet of paper. The band that stood here
+    introduced a project with a photograph, statistics and a paragraph; the
+    periods need none of that on the homepage, because the page they lead to
+    is itself the introduction. */}
+<section class="periods-band on-tone" aria-labelledby="periods-band">
+  <div class="shell periods-band__inner">
+    <p class="micro micro--accent reveal">{t('home.periodsLabel')}</p>
+    <h2 class="h1 periods-band__title reveal" id="periods-band" data-delay="1">{t('home.periodsNote')}</h2>
 
-      <Statistics items={stats} class="as-band__stats" />
-
-      <div class="as-band__foot reveal">
-        <a class="link" href={path('/art-sport', lang)}>
-          <span>{t('home.artsportCta')}</span>
-          <span class="link__arrow" aria-hidden="true"></span>
-        </a>
-      </div>
-    </div>
-
-    <div class="as-band__media reveal" data-delay="1">
-      {/* Portrait, not the old letterbox. A 21:9 strip is a header image; a
-          tall frame beside a column of text is a plate in a monograph. */}
-      <Media
-        ratio="4 / 5"
-        label={t('ph.artsport')}
-        index="01"
-        tone={4}
-        kind="process"
-        note={t('ph.awaiting')}
-        sizes="(max-width: 860px) 92vw, 42vw"
-      />
+    <div class="periods-band__foot reveal" data-delay="2">
+      <a class="link" href={path('/periods', lang)}>
+        <span>{t('home.periodsCta')}</span>
+        <span class="link__arrow" aria-hidden="true"></span>
+      </a>
     </div>
   </div>
 </section>
@@ -243,11 +215,13 @@ const stats = [
   <div class="shell about-teaser">
     <div class="about-teaser__media reveal">
       <Media
-        ratio="4 / 5"
-        label={t('ph.portrait')}
+        src={portrait?.image ?? ''}
+        alt={portraitAlt}
+        ratio={portrait?.ratio || '4 / 5'}
+        label={t('ph.artwork')}
         tone={2}
         kind="portrait"
-        note={t('ph.awaiting')}
+        note={portrait ? '' : t('ph.awaiting')}
         sizes="(max-width: 860px) 70vw, 28vw"
       />
     </div>
@@ -265,57 +239,30 @@ const stats = [
   </div>
 </section>
 
-<Disclosure lang={lang} />
-
 <style>
   /* ------------------------------------------------------------- opening */
 
-  /* The opening follows the approved reference: one wide photograph as the
-     ground of the hero, the title and paragraph standing on its washed-out
-     left side, and the two smaller works in a narrow column of their own on
-     the right. Desktop only — below 1025px the same pieces stack instead (see
-     the tablet block), because a text overlay on a phone-width photograph
-     leaves neither the words nor the picture legible.
-
-     The hero fills the screen under the sticky header and grows past it when
-     its content needs more room. The header is in the page flow, so the
-     photograph starts exactly at its bottom rule. */
+  /* The editorial opening spread: the name and the text that belongs to it in
+     a column on the left, the three works composed as a collage on the right.
+     The composition is asymmetric on purpose — the large frame leads, the two
+     smaller ones sit lower in a narrower column beside it. Below 1025px the
+     same pieces stack (see the tablet block). */
   .opening {
     position: relative;
-    display: grid;
-    align-items: center;
-    min-height: calc(100svh - var(--header-h) - 1px);
     padding-top: clamp(2.5rem, 6vw, 5.5rem);
     padding-bottom: clamp(4rem, 8vw, 7rem);
-
-    /* the right-hand column: the two small works and the air between them
-       and the photograph */
-    --side-w: clamp(14rem, 19.5vw, 23rem);
-    --side-gap: clamp(1rem, 1.5vw, 1.75rem);
-    /* where the shell's content ends on the right, measured from the edge of
-       the page — the same arithmetic as .shell: centred at --max, padded by
-       --gutter */
-    --inset-r: calc((100% - min(100%, var(--max))) / 2 + var(--gutter));
   }
 
   .opening__inner {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) var(--side-w);
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
     grid-template-areas:
-      'head side'
-      'say  side';
-    align-content: center;
-    column-gap: var(--side-gap);
+      'head collage'
+      'say  collage';
+    grid-template-rows: auto 1fr;
+    column-gap: clamp(2rem, 5vw, 5.5rem);
     row-gap: clamp(2rem, 4vw, 3.5rem);
-  }
-
-  /* Above the photograph. Neither the inner grid nor these are positioned
-     as containing blocks for it — the photograph measures itself against
-     .opening, so it can run to the edge of the page past the shell. */
-  .opening__head,
-  .opening__say {
-    position: relative;
-    z-index: 1;
+    align-items: start;
   }
 
   .opening__head {
@@ -326,26 +273,23 @@ const stats = [
     grid-area: say;
   }
 
-  /* The wrapper keeps its markup but steps out of the layout, so the large
-     frame and the small column are placed by the grid above (and by the
-     stacking order below 1025px) independently. */
   .opening__collage {
-    display: contents;
+    grid-area: collage;
+    display: grid;
+    grid-template-columns: 1.32fr 1fr;
+    gap: var(--gap);
+    align-items: start;
   }
 
-  /* The heading is set here rather than on --fs-display, which the Art ×
-     Champions title also reads.
-
-     It is sized to the light side of the photograph. "Organic Tessellated" is
-     9.1 times its own font size wide; at 5.4vw the line ends near 55% of the
-     screen, inside the part of the photograph the fade has washed out, so
-     both lines stay on the pale ground and the title stays on two lines. The
-     ceiling takes over past about 1900px, where the shell stops widening.
-     Below 1025px the tablet block puts back the size the single column has
-     always used. */
+  /* The display step is set against the full shell; here the name has 0.92 of
+     roughly half of it. "van Gogh" is the longer of the two lines at about 5.1
+     times its own font size, so the rate is carried down until that line ends
+     inside the column and the name stays on the two lines it is written as.
+     The floor and ceiling are the display step's own, so phones and very wide
+     screens are unchanged. */
   .opening__name {
     margin-top: clamp(1.5rem, 3vw, 2.5rem);
-    font-size: clamp(3.4rem, 5.4vw, 6.4rem);
+    font-size: clamp(3.1rem, 7.2vw, 7.4rem);
   }
 
   .opening__name .dot {
@@ -353,84 +297,45 @@ const stats = [
     color: var(--accent);
   }
 
+  .opening__statement {
+    font-size: clamp(1.4rem, 2.3vw, 2.1rem);
+    line-height: 1.18;
+    letter-spacing: -0.012em;
+    color: var(--ink);
+  }
+
+  .opening__rule {
+    display: block;
+    width: clamp(2.25rem, 4vw, 3.5rem);
+    height: 2px;
+    margin-top: clamp(1.5rem, 2.6vw, 2.25rem);
+    background: var(--accent);
+  }
+
   .opening__intro {
     margin-top: clamp(1.25rem, 2.2vw, 1.85rem);
     max-width: 42ch;
   }
 
-  /* The photograph: from the left edge of the page to just short of the
-     small column, from the header down to the end of the hero. */
-  .opening__main {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    width: calc(100% - var(--inset-r) - var(--side-w) - var(--side-gap));
-  }
-
-  .opening__main :global(.media) {
-    height: 100%;
-    aspect-ratio: auto;
-  }
-
-  /* The wash that keeps the text legible without hiding the photograph.
-     Made of the page colour, so it reads as the photograph fading into the
-     paper rather than as a white box laid over it. Three layers, each only as
-     strong as its job needs:
-
-     - a soft pool behind the paragraph, the one place that needs real
-       lightening — small grey type is what loses contrast first;
-     - a light left-to-right fade under the title, which is large and nearly
-       black and stays readable over far more of the picture;
-     - a gentle settle into the page along the bottom edge.
-
-     The photograph is left clearly visible from the left edge to the middle
-     and untouched on its right-hand third. */
-  .opening__main::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background:
-      radial-gradient(
-        ellipse 62% 56% at 26% 74%,
-        color-mix(in srgb, var(--paper) 86%, transparent) 0%,
-        color-mix(in srgb, var(--paper) 74%, transparent) 55%,
-        transparent 100%
-      ),
-      linear-gradient(
-        to right,
-        color-mix(in srgb, var(--paper) 62%, transparent) 0%,
-        color-mix(in srgb, var(--paper) 48%, transparent) 30%,
-        color-mix(in srgb, var(--paper) 26%, transparent) 50%,
-        color-mix(in srgb, var(--paper) 8%, transparent) 66%,
-        transparent 80%
-      ),
-      linear-gradient(to top, color-mix(in srgb, var(--paper) 80%, transparent) 0%, transparent 16%);
-  }
-
-  /* With no photograph chosen the frame keeps its placeholder. Its tag moves
-     to the top right, clear of the text, and the caption to the bottom right. */
-  .opening__main :global(.media__ph) {
-    place-items: start end;
-    padding: clamp(1.5rem, 3vw, 3rem);
+  .opening__cta {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: clamp(1.75rem, 3vw, 2.5rem);
+    /* the link sits right-aligned in its column, against the collage */
+    padding-right: clamp(0rem, 3vw, 3rem);
   }
 
   .opening__caption {
-    position: absolute;
-    right: clamp(1.5rem, 3vw, 3rem);
-    bottom: clamp(1.5rem, 3vw, 3rem);
-    z-index: 1;
-    margin: 0;
+    margin-top: 0.85rem;
     color: var(--ink-faint);
   }
 
   .opening__side {
-    grid-area: side;
-    grid-row: 1 / -1;
-    align-self: center;
     display: grid;
     gap: clamp(1.25rem, 2.5vw, 2.25rem);
+    /* drops the smaller pair below the top of the large frame, which is what
+       keeps the collage asymmetric */
+    margin-top: clamp(2rem, 6vw, 5rem);
   }
 
   /* The anchor wrapping a small frame. `display: block` is the whole rule:
@@ -440,26 +345,6 @@ const stats = [
      global.css, so the frames look and behave exactly as they did. */
   .opening__link {
     display: block;
-  }
-
-  /* ------------------------------------------------------------- statement */
-
-  .say__quote {
-    margin: 0;
-    padding-top: clamp(2.5rem, 5vw, 4.5rem);
-    display: grid;
-    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
-    gap: clamp(1.75rem, 5vw, 5rem);
-    align-items: end;
-  }
-
-  .say__quote p {
-    max-width: 16ch;
-  }
-
-  .say__note {
-    color: var(--ink-soft);
-    max-width: 38ch;
   }
 
   /* ------------------------------------------------------------- spread */
@@ -483,28 +368,9 @@ const stats = [
     margin-top: clamp(3rem, 6vw, 5rem);
   }
 
-  /* ------------------------------------------------------------- art × sport */
+  /* ------------------------------------------------ the page's fields */
 
-  /* ------------------------------------------------ section transitions */
-
-  /* The quote is a pause before the works, not a section of its own with a
-     field of paper after it. Its bottom padding used to stack on top of the
-     next section's 158px, which put 259px of nothing between one line of
-     serif and the words SELECTED WORKS. The section below still brings its
-     own opening space; this only stops the two being added together. */
-  .say {
-    padding-bottom: 0;
-  }
-
-  /* ------------------------------------------------ the page's four fields */
-
-  /* One field, two sections. The statement and the works it introduces share
-     a single sheet of the secondary tone. Because .say's bottom padding is
-     zero and the section below brings its own top padding, the two
-     backgrounds meet with no seam — the eye reads one change of paper, not
-     two adjacent panels.
-
-     .on-tone rides along in the markup because the grey text tokens are set
+  /* .on-tone rides along in the markup because the grey text tokens are set
      against --paper: on #E7E5DF, --ink-faint falls to 3.86:1 and --accent-ink
      to 4.06:1, both under AA. The class steps them down. Nothing about the
      type changes; it is the same hierarchy, corrected for the sheet it is
@@ -513,61 +379,32 @@ const stats = [
     background: var(--paper-deep);
   }
 
-  .as-band {
-    /* The deepest tone on the homepage, and the only place it appears. The
-       band was the secondary tone, which made it indistinguishable from the
-       field above once that field also became secondary — two thirds of the
-       page on one colour. Art × Sport is the signature project and should be
-       the section a visitor can point at. */
+  /* ------------------------------------------------------------- periods */
+
+  /* The deepest tone on the homepage, and the only place it appears — the one
+     section a visitor can point at between two fields of paper. */
+  .periods-band {
     background: var(--paper-tint);
     padding-block: var(--section);
-    /* The tone change is the boundary. A margin on top of it was a third
-       separator doing the same job as the other two — 43px on each side,
-       between two neighbours that each already contribute 158. */
     margin-block: 0;
   }
 
-  /* Where paper meets the band, one section's worth of air is enough. Both
-     neighbours keep their full spacing on their far side, so the page still
-     breathes; it is only this junction, where a tone already says "new
-     sheet", that was being separated three times over. */
-  .section:has(+ .as-band) {
+  /* Where paper meets the band, one section's worth of air is enough: the
+     tone change is already the boundary. */
+  .section:has(+ .periods-band) {
     padding-bottom: var(--section-tight);
   }
 
-  .as-band + .section {
+  .periods-band + .section {
     padding-top: var(--section-tight);
   }
 
-  /* The text column is the wider of the two. The image is dominant by scale
-     against its neighbours, not by taking the larger share of the page —
-     a reading column that loses to its illustration stops being read. */
-  .as-band__inner {
-    display: grid;
-    grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
-    gap: clamp(2rem, 6vw, 6rem);
-    align-items: center;
-  }
-
-  .as-band__title {
+  .periods-band__title {
     margin-top: clamp(0.85rem, 2vw, 1.4rem);
+    max-width: 18ch;
   }
 
-  .as-band__lead {
-    color: var(--ink-soft);
-    margin-top: clamp(1.25rem, 2.4vw, 2rem);
-    max-width: 46ch;
-  }
-
-  .as-band__stats {
-    border-top-color: var(--ink-faint);
-    margin-top: clamp(2rem, 4vw, 3.25rem);
-  }
-
-  .as-band__foot {
-    /* Left, under the text it belongs to. Right-aligned it floated between
-       the two columns and read as page furniture rather than as this
-       project's own link. */
+  .periods-band__foot {
     display: flex;
     justify-content: flex-start;
     margin-top: clamp(2rem, 4vw, 3rem);
@@ -594,14 +431,8 @@ const stats = [
   /* ============================================================= tablet */
 
   @media (max-width: 1024px) {
-    /* No overlay on a narrow screen: title, then the photograph as the lead
-       image in the flow of the page, then the paragraph, then the two small
-       works side by side. */
-    .opening {
-      display: block;
-      min-height: 0;
-    }
-
+    /* One column, in reading order: the name, the work that leads the page,
+       the text, then the two smaller works side by side under it. */
     .opening__inner {
       grid-template-columns: minmax(0, 1fr);
       grid-template-areas:
@@ -612,70 +443,44 @@ const stats = [
       row-gap: clamp(2rem, 5vw, 3rem);
     }
 
+    /* the collage steps out of the layout so the outer grid can place the
+       large frame and the smaller pair separately, with the text between them */
+    .opening__collage {
+      display: contents;
+    }
+
     /* the size the single column has always used */
     .opening__name {
       font-size: clamp(2.728rem, 7.5vw, 7.9rem);
     }
 
+    /* Capped rather than full-bleed. The lead frame is a portrait format, so
+       at the full width of a tablet column it stands 900px tall and pushes the
+       text that introduces it off the screen entirely. Left-aligned at this
+       width, which also keeps the stack asymmetric. */
     .opening__main {
       grid-area: main;
-      position: relative;
-      width: auto;
-    }
-
-    .opening__main :global(.media) {
-      height: auto;
-      aspect-ratio: var(--ratio);
-    }
-
-    .opening__main::after {
-      display: none;
-    }
-
-    .opening__main :global(.media__ph) {
-      place-items: center;
-      padding: 0;
-    }
-
-    .opening__caption {
-      position: static;
-      margin-top: 0.85rem;
+      width: min(100%, 30rem);
     }
 
     .opening__side {
-      grid-row: side;
+      grid-area: side;
       align-self: start;
       grid-template-columns: 1fr 1fr;
       align-items: start;
       gap: clamp(0.75rem, 3vw, 1.25rem);
+      margin-top: 0;
     }
 
-    .say__quote {
-      grid-template-columns: minmax(0, 1fr);
-      align-items: start;
-    }
-
-    .say__quote p {
-      max-width: 20ch;
+    .opening__cta {
+      justify-content: flex-start;
+      padding-right: 0;
     }
 
     .spread__cell--1 { grid-column: 1 / span 7; }
     .spread__cell--2 { grid-column: 8 / span 5; }
     .spread__cell--3 { grid-column: 1 / span 5; }
     .spread__cell--4 { grid-column: 6 / span 7; }
-
-    /* Text over image once the two columns stop being worth keeping side by
-       side. The reading order already puts the text first in the markup, so
-       stacking needs no reordering. */
-    .as-band__inner {
-      grid-template-columns: minmax(0, 1fr);
-      align-items: start;
-      gap: clamp(2rem, 6vw, 3.5rem);
-    }
-
-    .as-band__media {
-      width: min(100%, 26rem);
-    }
 
     .about-teaser {
       grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
@@ -702,6 +507,10 @@ const stats = [
       padding-left: 11%;
     }
 
+    .opening__statement {
+      font-size: clamp(1.35rem, 6.5vw, 1.9rem);
+    }
+
     .spread {
       grid-template-columns: minmax(0, 1fr);
       row-gap: clamp(2.5rem, 9vw, 3.5rem);
@@ -720,8 +529,7 @@ const stats = [
     .spread__cell--3 { padding-right: 26%; }
     .spread__cell--4 { padding-left: 12%; }
 
-    .spread__foot,
-    .as-band__foot {
+    .spread__foot {
       justify-content: flex-start;
     }
 

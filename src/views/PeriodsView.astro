@@ -1,0 +1,308 @@
+---
+import Media from '../components/Media.astro';
+import { useTranslations, path } from '../i18n/utils.js';
+import { artworks, artworkIndex } from '../data/content.js';
+import { displayAlt, displayTitle } from '../utils/display.js';
+
+const { lang = 'en' } = Astro.props;
+const t = useTranslations(lang);
+
+/**
+ * The five places the work was made in, in the order they happened.
+ *
+ * The slug is the category a work carries, so the paintings under each period
+ * are read from the archive rather than listed here — importing a sixth Arles
+ * canvas puts it on this page with no edit.
+ *
+ * `side` alternates the spread. The image's column count follows the lead
+ * painting's orientation: a portrait across seven columns becomes a thousand
+ * pixels tall and swallows the text beside it.
+ */
+const PERIODS = [
+  { n: '01', slug: 'nuenen', side: 'left' },
+  { n: '02', slug: 'paris', side: 'right' },
+  { n: '03', slug: 'arles', side: 'left' },
+  { n: '04', slug: 'saint-remy', side: 'right' },
+  { n: '05', slug: 'auvers', side: 'left' },
+];
+
+/** Portrait formats get the narrower share of the grid. */
+function columnsFor(ratio) {
+  const [w, h] = String(ratio ?? '').split('/').map((n) => parseFloat(n));
+  if (!Number.isFinite(w) || !Number.isFinite(h) || h === 0) return 7;
+  return w / h < 0.9 ? 5 : 7;
+}
+
+const periods = PERIODS.map((p, i) => {
+  const works = artworks.filter((a) => a.category === p.slug);
+  const lead = works[0] ?? null;
+  const index = lead ? artworkIndex(lead.id) : '';
+
+  return {
+    ...p,
+    name: t(`periods.p${i + 1}name`),
+    dates: t(`periods.p${i + 1}dates`),
+    place: t(`periods.p${i + 1}place`),
+    body: t(`periods.p${i + 1}body`),
+    works,
+    lead,
+    w: columnsFor(lead?.ratio),
+    src: lead?.image ?? '',
+    alt: lead ? displayAlt(lead, t, index) : '',
+    label: lead ? displayTitle(lead, t, index) : '',
+    href: lead ? path(`/works/${lead.id}`, lang) : '',
+    ratio: lead?.ratio || '4 / 3',
+  };
+});
+
+/* A frame with no painting behind it has no detail page to open, so it is not
+   made a link — an anchor that leads to a 404 is worse than none. */
+const linkFor = (p) =>
+  p.href
+    ? { Tag: 'a', attrs: { href: p.href, 'aria-label': p.label, class: 'period__link' } }
+    : { Tag: Fragment, attrs: {} };
+---
+
+<!-- ================================================== OPENING -->
+<section class="periods-open">
+  <div class="shell">
+    <p class="micro reveal">{t('common.index')}</p>
+
+    <h1 class="periods-open__title display">
+      <span class="reveal-line"><span>{t('periods.title')}<span class="dot">.</span></span></span>
+    </h1>
+
+    <div class="periods-open__lead">
+      <p class="lead reveal" data-delay="2">{t('periods.lead')}</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================== PERIODS -->
+<section class="section--tight" aria-label={t('periods.title')}>
+  <div class="shell">
+    {
+      periods.map((p) => {
+        const link = linkFor(p);
+
+        return (
+          <article class:list={['period', `period--${p.side}`, `period--w${p.w}`]}>
+            <div class="period__media reveal">
+              <link.Tag {...link.attrs}>
+                <Media
+                  src={p.src}
+                  alt={p.alt}
+                  ratio={p.ratio}
+                  label={p.name}
+                  shortLabel={p.name}
+                  tone={2}
+                  sizes={`(max-width: 760px) 92vw, ${Math.round((p.w / 12) * 100)}vw`}
+                />
+              </link.Tag>
+            </div>
+
+            <div class="period__text">
+              <p class="micro period__n reveal">{p.n}</p>
+              <h2 class="h2 period__title reveal" data-delay="1">{p.name}</h2>
+              <p class="micro period__meta reveal" data-delay="1">
+                {p.dates} · {p.place}
+              </p>
+              <p class="body reveal" data-delay="2">{p.body}</p>
+
+              {p.works.length > 0 && (
+                <ul class="period__works reveal" data-delay="3">
+                  {p.works.map((w) => (
+                    <li>
+                      <a href={path(`/works/${w.id}`, lang)}>
+                        {displayTitle(w, t, artworkIndex(w.id))}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </article>
+        );
+      })
+    }
+  </div>
+</section>
+
+<!-- ================================================== FOOT -->
+<section class="section--tight periods-foot">
+  <div class="shell">
+    <div class="periods-foot__inner reveal">
+      <a class="link" href={path('/works', lang)}>
+        <span>{t('common.viewAll')}</span>
+        <span class="link__arrow" aria-hidden="true"></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* ------------------------------------------------------------- opening */
+
+  .periods-open {
+    padding-top: clamp(3rem, 8vw, 7rem);
+    padding-bottom: clamp(2rem, 5vw, 4rem);
+  }
+
+  .periods-open__title {
+    margin-top: clamp(1.25rem, 3vw, 2.25rem);
+  }
+
+  .periods-open__title .dot {
+    color: var(--accent);
+  }
+
+  .periods-open__lead {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: clamp(2rem, 4vw, 3.25rem);
+  }
+
+  .periods-open__lead .lead {
+    width: min(100%, 46ch);
+    color: var(--ink-soft);
+  }
+
+  /* ------------------------------------------------------------- periods */
+
+  .period {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--gap);
+    align-items: center;
+  }
+
+  .period + .period {
+    margin-top: clamp(4rem, 12vw, 11rem);
+  }
+
+  /* image width follows the lead painting's proportion, text takes the rest */
+  .period--left.period--w7 .period__media { grid-column: 1 / span 7; }
+  .period--left.period--w7 .period__text { grid-column: 9 / span 4; }
+
+  .period--left.period--w5 .period__media { grid-column: 1 / span 5; }
+  .period--left.period--w5 .period__text { grid-column: 7 / span 4; }
+
+  .period--right .period__media { grid-row: 1; }
+  .period--right .period__text { grid-row: 1; grid-column: 1 / span 4; }
+
+  .period--right.period--w7 .period__media { grid-column: 6 / span 7; }
+  .period--right.period--w5 .period__media { grid-column: 8 / span 5; }
+
+  /* `display: block` is the whole rule: an inline anchor around a block figure
+     sits on a text baseline and adds a few pixels under the image. */
+  .period__link {
+    display: block;
+  }
+
+  .period__n {
+    color: var(--accent-ink);
+    margin-bottom: 1rem;
+  }
+
+  .period__title {
+    margin-bottom: 0.5rem;
+  }
+
+  .period__meta {
+    color: var(--ink-faint);
+    margin-bottom: clamp(1rem, 2vw, 1.5rem);
+  }
+
+  .period__works {
+    list-style: none;
+    margin: clamp(1.5rem, 3vw, 2.25rem) 0 0;
+    padding: 0;
+    border-top: 1px solid var(--rule);
+  }
+
+  .period__works li {
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .period__works a {
+    display: block;
+    padding-block: 0.7rem;
+    font-size: var(--fs-small);
+    color: var(--ink);
+    transition: color 400ms var(--ease);
+  }
+
+  .period__works a:hover {
+    color: var(--accent-ink);
+  }
+
+  /* ------------------------------------------------------------- foot */
+
+  /* The closing link, not a section of its own. It used to sit in 300px of
+     which it filled 8 — the rule above it already separates it from the last
+     period, so the space only has to be enough to read as a pause. */
+  .periods-foot {
+    padding-block: 0 clamp(2.5rem, 5vw, 4rem);
+  }
+
+  .periods-foot__inner {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: clamp(1.5rem, 3vw, 2.25rem);
+    border-top: 1px solid var(--rule);
+  }
+
+  /* ============================================================= tablet */
+
+  @media (max-width: 1024px) {
+    /* An even split, not the 7/5 the desktop composition uses. At 768 that
+       left the reading column 279px wide — about 35 characters a line, which
+       is below the measure body copy needs. Six columns brings it back. */
+    .period--left[class] .period__media { grid-column: 1 / span 6; }
+    .period--left[class] .period__text { grid-column: 7 / span 6; }
+
+    .period--right[class] .period__media { grid-column: 7 / span 6; }
+    .period--right[class] .period__text { grid-column: 1 / span 6; }
+
+    .periods-open__lead {
+      justify-content: flex-start;
+    }
+  }
+
+  /* ============================================================= mobile */
+
+  @media (max-width: 760px) {
+    .period {
+      grid-template-columns: minmax(0, 1fr);
+      row-gap: clamp(1.25rem, 5vw, 2rem);
+    }
+
+    /* text first, image second — the period reads before it is shown. the
+       [class] hook keeps these at the same weight as the column rules above,
+       which are two classes deep */
+    .period--left[class] .period__media,
+    .period--right[class] .period__media {
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
+
+    .period--left[class] .period__text,
+    .period--right[class] .period__text {
+      grid-column: 1 / -1;
+      grid-row: 1;
+    }
+
+    /* alternate the inset so the sequence keeps its rhythm in one column */
+    .period--right .period__media {
+      padding-left: 14%;
+    }
+
+    .period--left .period__media {
+      padding-right: 14%;
+    }
+
+    .periods-foot__inner {
+      justify-content: flex-start;
+    }
+  }
+</style>

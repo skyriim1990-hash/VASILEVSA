@@ -1,0 +1,11 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PeriodsView from '../views/PeriodsView.astro';
+import { useTranslations } from '../i18n/utils.js';
+
+const t = useTranslations('en');
+---
+
+<BaseLayout lang="en" title={t('periods.title')} description={t('meta.periods')}>
+  <PeriodsView lang="en" />
+</BaseLayout>

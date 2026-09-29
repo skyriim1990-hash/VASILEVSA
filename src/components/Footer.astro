@@ -3,10 +3,13 @@ import { useTranslations, path, ROUTES } from '../i18n/utils.js';
 
 const { lang = 'en' } = Astro.props;
 const t = useTranslations(lang);
-const year = new Date().getFullYear();
 
 /* No social links are shown: no real profiles have been supplied and none
-   will be invented. Add them here once confirmed. */
+   will be invented.
+
+   No copyright line either. The paintings are public domain and their author
+   died in 1890 — a notice in his name over them would be a false claim, and
+   the one thing this footer must not do is read as an institution. */
 ---
 
 <footer class="foot">
@@ -14,8 +17,8 @@ const year = new Date().getFullYear();
     <div class="foot__top">
       <div class="foot__mark">
         <p class="foot__mono" aria-hidden="true">{t('site.shortName')}</p>
-        <p class="foot__name">Alexandre Vassilev-Vasilevsa<span class="dot">.</span></p>
-        <p class="foot__tag serif">{t('footer.tagline')}</p>
+        <p class="foot__name">{t('site.name')}<span class="dot">.</span></p>
+        <p class="foot__soft">{t('footer.dates')}</p>
       </div>
 
       <nav class="foot__nav" aria-label={t('footer.nav')}>
@@ -30,17 +33,17 @@ const year = new Date().getFullYear();
       <div class="foot__meta">
         <p class="micro foot__head">{t('site.role')}</p>
         <p class="foot__soft">{t('site.location')}</p>
-        <p class="foot__soft foot__soft--note">{t('contact.detailsPending')}</p>
       </div>
     </div>
 
     <div class="foot__bottom">
-      <p class="micro">© {year} Alexandre Vassilev-Vasilevsa. {t('footer.rights')}</p>
+      {/* The concept disclosure. Quiet, but on every page — it is the one
+          statement the site cannot afford to leave to a meta tag. */}
+      <p class="micro foot__note">{t('disclosure.short')}</p>
       <ul class="foot__legal">
         <li><a href={path('/privacy', lang)}>{t('footer.privacy')}</a></li>
         <li><a href={path('/terms', lang)}>{t('footer.terms')}</a></li>
       </ul>
-      <p class="micro foot__credit">{t('footer.credit')}</p>
     </div>
   </div>
 </footer>
@@ -72,14 +75,6 @@ const year = new Date().getFullYear();
     text-transform: uppercase;
   }
 
-  .foot__tag {
-    margin-top: 0.9rem;
-    font-size: clamp(1.15rem, 1.9vw, 1.6rem);
-    line-height: 1.25;
-    color: var(--ink-soft);
-    max-width: 22ch;
-  }
-
   .foot__head {
     margin-bottom: 1.25rem;
   }
@@ -108,11 +103,6 @@ const year = new Date().getFullYear();
     max-width: 28ch;
   }
 
-  .foot__soft--note {
-    margin-top: 0.6rem;
-    color: var(--ink-faint);
-  }
-
   .foot__bottom {
     display: flex;
     flex-wrap: wrap;
@@ -139,8 +129,14 @@ const year = new Date().getFullYear();
     color: var(--accent-ink);
   }
 
-  .foot__credit {
+  /* The disclosure takes the width it needs; the legal links sit after it and
+     drop below on a narrow screen. */
+  .foot__note {
     color: var(--ink-faint);
+    max-width: 62ch;
+    letter-spacing: 0.06em;
+    text-transform: none;
+    line-height: 1.65;
   }
 
   @media (max-width: 860px) {

@@ -16,7 +16,7 @@ const meta = [
   { k: t('detail.year'), v: value(artwork.year) },
   { k: t('detail.medium'), v: value(artwork.medium) },
   { k: t('detail.dimensions'), v: value(artwork.dimensions) },
-  { k: t('detail.category'), v: categoryLabel(artwork.category) },
+  { k: t('detail.period'), v: categoryLabel(artwork.category) },
 ];
 
 const incomplete = !artwork.title || !artwork.year || !artwork.medium || !artwork.dimensions;
