@@ -36,7 +36,6 @@ const alt = displayAlt(artwork, t, index);
       sizes={sizes}
       priority={priority}
     />
-    <span class="card__arrow" aria-hidden="true"></span>
   </div>
 
   <div class="card__meta">
@@ -81,37 +80,6 @@ const alt = displayAlt(artwork, t, index);
   .card:hover .card__frame::after,
   .card:focus-visible .card__frame::after {
     opacity: 0.04;
-  }
-
-  .card__arrow {
-    position: absolute;
-    right: 1rem;
-    bottom: 1rem;
-    width: 2.25rem;
-    height: 2.25rem;
-    border: 1px solid var(--rule);
-    background: var(--paper);
-    opacity: 0;
-    transform: translateY(6px);
-    transition: opacity 500ms var(--ease), transform 500ms var(--ease);
-  }
-
-  .card__arrow::after {
-    content: '';
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 6px;
-    height: 6px;
-    border-top: 1px solid var(--ink);
-    border-right: 1px solid var(--ink);
-    transform: translate(-60%, -50%) rotate(45deg);
-  }
-
-  .card:hover .card__arrow,
-  .card:focus-visible .card__arrow {
-    opacity: 1;
-    transform: none;
   }
 
   .card__meta {

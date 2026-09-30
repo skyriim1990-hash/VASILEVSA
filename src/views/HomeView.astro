@@ -82,8 +82,6 @@ const portraitAlt = portrait ? displayAlt(portrait, t, artworkIndex(portrait.id)
 <section class="opening">
   <div class="shell opening__inner">
     <div class="opening__head">
-      <p class="micro reveal">{t('home.eyebrow')}</p>
-
       <h1 class="opening__name display">
         <span class="reveal-line"><span>{t('home.title1')}</span></span>
         <span class="reveal-line" data-delay="1"><span>{t('home.title2')}<span class="dot">.</span></span></span>
@@ -92,13 +90,6 @@ const portraitAlt = portrait ? displayAlt(portrait, t, artworkIndex(portrait.id)
 
     <div class="opening__say">
       <p class="opening__statement serif reveal">{t('home.statement')}</p>
-
-      {/* A short accent rule between the statement and the prose. It does the
-          job a paragraph break cannot: marks where the voice changes from the
-          plain fact to the site describing what it holds. Decorative, so it is
-          a span rather than an <hr> — an <hr> is a thematic break and a screen
-          reader would announce it. */}
-      <span class="opening__rule reveal" data-delay="1" aria-hidden="true"></span>
 
       <p class="body opening__intro reveal" data-delay="2">{t('home.lead')}</p>
 
@@ -302,14 +293,6 @@ const portraitAlt = portrait ? displayAlt(portrait, t, artworkIndex(portrait.id)
     line-height: 1.18;
     letter-spacing: -0.012em;
     color: var(--ink);
-  }
-
-  .opening__rule {
-    display: block;
-    width: clamp(2.25rem, 4vw, 3.5rem);
-    height: 2px;
-    margin-top: clamp(1.5rem, 2.6vw, 2.25rem);
-    background: var(--accent);
   }
 
   .opening__intro {

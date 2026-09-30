@@ -9,10 +9,6 @@ const email = t('contact.email');
 
 <section class="contact">
   <div class="shell">
-    <div class="contact__row">
-      <p class="micro reveal">{t('contact.title')}</p>
-    </div>
-
     <h1 class="contact__title h1">
       <span class="reveal-line"><span>{t('contact.title')}</span></span>
     </h1>
@@ -35,21 +31,12 @@ const email = t('contact.email');
 
 <style>
   .contact {
-    padding-top: clamp(3rem, 8vw, 7rem);
+    padding-top: 4rem;
     padding-bottom: clamp(4rem, 9vw, 8rem);
   }
 
-  .contact__row {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--gap);
-    padding-bottom: clamp(1.5rem, 4vw, 3rem);
-    border-bottom: 1px solid var(--rule);
-  }
-
   .contact__title {
-    padding-top: clamp(1.75rem, 4vw, 3rem);
+    padding-top: 0;
     max-width: 14ch;
   }
 
@@ -104,6 +91,12 @@ const email = t('contact.email');
     .contact__body {
       grid-template-columns: minmax(0, 1fr);
       gap: clamp(2.5rem, 8vw, 3.5rem);
+    }
+  }
+
+  @media (max-width: 760px) {
+    .contact {
+      padding-top: 4.25rem;
     }
   }
 
