@@ -16,7 +16,7 @@ const t = useTranslations(lang);
   <div class="shell">
     <div class="foot__top">
       <div class="foot__mark">
-        <p class="foot__mono" aria-hidden="true">{t('site.shortName')}</p>
+        <p class="foot__mono" aria-hidden="true"></p>
         <p class="foot__name">{t('site.name')}<span class="dot">.</span></p>
         <p class="foot__soft">{t('footer.dates')}</p>
       </div>
@@ -61,11 +61,16 @@ const t = useTranslations(lang);
     padding-bottom: clamp(3rem, 6vw, 5rem);
   }
 
+  /* Same box the old text mark had (font-size and line-height set the height);
+     the vector mark is drawn inside it as a mask, in the current ink colour. */
   .foot__mono {
-    font-family: var(--sans);
     font-size: clamp(2.5rem, 6vw, 4.5rem);
-    line-height: 0.85;
+    width: 2.2em;
+    height: 0.85em;
     margin-bottom: 1.25rem;
+    background: currentColor;
+    -webkit-mask: url('/vvg-mark.svg') left center / contain no-repeat;
+    mask: url('/vvg-mark.svg') left center / contain no-repeat;
   }
 
   .foot__name {

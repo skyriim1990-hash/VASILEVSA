@@ -15,7 +15,7 @@ const links = ROUTES.map((r) => ({
 <header class="head">
   <div class="head__inner shell">
     <a class="brand" href={path('/', lang)} aria-label={`${t('site.name')} — ${t('nav.home')}`}>
-      <span class="brand__mark" aria-hidden="true">{t('site.shortName')}</span>
+      <span class="brand__mark" aria-hidden="true">&#8203;</span>
       <span class="brand__name">
         {t('site.name')}<span class="dot">.</span>
       </span>
@@ -45,7 +45,7 @@ const links = ROUTES.map((r) => ({
 <!-- full-screen mobile menu -->
 <div class="sheet" id="mobile-menu" hidden>
   <div class="sheet__bar shell">
-    <span class="brand__mark" aria-hidden="true">{t('site.shortName')}</span>
+    <span class="brand__mark" aria-hidden="true">&#8203;</span>
     <button class="sheet__close" type="button" data-menu-close>
       <span aria-hidden="true">{t('nav.close')}</span>
       <span class="visually-hidden">{t('nav.close')}</span>
@@ -106,11 +106,20 @@ const links = ROUTES.map((r) => ({
     min-width: 0;
   }
 
+  /* The mark is a vector file used as a mask, so it takes the current ink colour
+     and does not depend on any webfont. The box keeps the font size and line
+     height of the text mark it replaced (the zero-width space in the markup gives
+     it the same baseline), so the wordmark beside it stays where it was; the
+     glyphs are placed on that baseline. */
   .brand__mark {
+    display: inline-block;
     font-family: var(--sans);
     font-size: 1.58rem;
     line-height: 1;
-    letter-spacing: 0.02em;
+    width: 3.25rem;
+    background: currentColor;
+    -webkit-mask: url('/vvg-mark.svg') 0 0.25rem / 3.25rem auto no-repeat;
+    mask: url('/vvg-mark.svg') 0 0.25rem / 3.25rem auto no-repeat;
     flex: none;
   }
 
