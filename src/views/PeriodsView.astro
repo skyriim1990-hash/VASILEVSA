@@ -66,8 +66,6 @@ const linkFor = (p) =>
 <!-- ================================================== OPENING -->
 <section class="periods-open">
   <div class="shell">
-    <p class="micro reveal">{t('common.index')}</p>
-
     <h1 class="periods-open__title display">
       <span class="reveal-line"><span>{t('periods.title')}<span class="dot">.</span></span></span>
     </h1>
@@ -104,7 +102,7 @@ const linkFor = (p) =>
             <div class="period__text">
               <p class="micro period__n reveal">{p.n}</p>
               <h2 class="h2 period__title reveal" data-delay="1">{p.name}</h2>
-              <p class="micro period__meta reveal" data-delay="1">
+              <p class="period__meta reveal" data-delay="1">
                 {p.dates} · {p.place}
               </p>
               <p class="body reveal" data-delay="2">{p.body}</p>
@@ -143,13 +141,16 @@ const linkFor = (p) =>
 <style>
   /* ------------------------------------------------------------- opening */
 
+  /* The title carried a top margin that existed to clear the label above it.
+     With the label gone the two stacked to 138px, against 64 on Works, so the
+     margin goes and the opening space is set here alone. */
   .periods-open {
-    padding-top: clamp(3rem, 8vw, 7rem);
+    padding-top: 4rem;
     padding-bottom: clamp(2rem, 5vw, 4rem);
   }
 
   .periods-open__title {
-    margin-top: clamp(1.25rem, 3vw, 2.25rem);
+    margin-top: 0;
   }
 
   .periods-open__title .dot {
@@ -208,7 +209,11 @@ const linkFor = (p) =>
     margin-bottom: 0.5rem;
   }
 
+  /* Dates and a place are information, not a label. Set as text rather than in
+     the tracked uppercase the numbers above use — eleven of those on one page
+     made the sequence read as a control panel. */
   .period__meta {
+    font-size: var(--fs-small);
     color: var(--ink-faint);
     margin-bottom: clamp(1rem, 2vw, 1.5rem);
   }
@@ -272,6 +277,11 @@ const linkFor = (p) =>
   /* ============================================================= mobile */
 
   @media (max-width: 760px) {
+    /* A little more on a phone, where the header sits closer to the type. */
+    .periods-open {
+      padding-top: 4.25rem;
+    }
+
     .period {
       grid-template-columns: minmax(0, 1fr);
       row-gap: clamp(1.25rem, 5vw, 2rem);

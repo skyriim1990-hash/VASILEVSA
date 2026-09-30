@@ -3,16 +3,24 @@
  * The opening of every interior page: a small index label, a display-serif
  * title set on its own line, and an optional lead paragraph offset to the
  * right so the page never opens as a centred block.
+ *
+ * `divider` turns off the label row and the rule under it, for a page that
+ * wants to open on its title. It is opt-in rather than derived from `label`
+ * being empty, so pages that pass no label keep the header they have.
  */
-const { label = '', title, lead = '', count = '' } = Astro.props;
+const { label = '', title, lead = '', count = '', divider = true } = Astro.props;
 ---
 
-<header class="page-head">
+<header class:list={['page-head', !divider && 'page-head--bare']}>
   <div class="shell">
-    <div class="page-head__row">
-      {label && <p class="micro reveal">{label}</p>}
-      {count && <p class="micro page-head__count reveal" data-delay="1">{count}</p>}
-    </div>
+    {
+      divider && (
+        <div class="page-head__row">
+          {label && <p class="micro reveal">{label}</p>}
+          {count && <p class="micro page-head__count reveal" data-delay="1">{count}</p>}
+        </div>
+      )
+    }
 
     <h1 class="page-head__title h1">
       <span class="reveal-line"><span>{title}</span></span>
@@ -41,6 +49,24 @@ const { label = '', title, lead = '', count = '' } = Astro.props;
     gap: var(--gap);
     padding-bottom: clamp(1.5rem, 4vw, 3rem);
     border-bottom: 1px solid var(--rule);
+  }
+
+  /* Without the row there is no rule to clear, so the title's own top padding
+     goes and the header's opening space comes down — the two used to stack to
+     roughly 10rem above the first line of type. */
+  .page-head--bare {
+    padding-top: clamp(2.25rem, 5vw, 4rem);
+  }
+
+  .page-head--bare .page-head__title {
+    padding-top: 0;
+  }
+
+  /* Matches the opening space on Periods, so the two titles start level. */
+  @media (max-width: 760px) {
+    .page-head--bare {
+      padding-top: 4.25rem;
+    }
   }
 
   .page-head__count {

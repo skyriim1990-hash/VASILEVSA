@@ -72,15 +72,16 @@ export const ui = {
     'home.title2': 'van Gogh',
     'home.statement': 'Dutch painter, 1853–1890.',
     'home.lead':
-      'Vincent van Gogh painted for roughly the last decade of his life, working first in the Netherlands and then in France. This is a concept archive of selected paintings from those years.',
+      'Vincent van Gogh painted for roughly the last decade of his life, working first in the Netherlands and then in France. The paintings here are drawn from those years.',
     'home.selected': 'Selected works',
-    'home.selectedNote': 'A shortlist from across the archive.',
+    'home.selectedNote': 'Four, from across the decade.',
+    'home.exploreCta': 'Explore the works',
     'home.periodsLabel': 'Periods',
     'home.periodsNote': 'Five places. One decade of painting.',
     'home.periodsCta': 'View the periods',
-    'home.aboutTitle': 'Ten paintings, five places.',
+    'home.aboutTitle': 'Selected works from the archive.',
     'home.aboutLead':
-      'An independent concept archive built around Van Gogh’s work. Titles, dates, media and dimensions follow the records of the museums that hold the paintings.',
+      'An independent concept project built around Van Gogh’s work. Titles, dates, media and dimensions follow the records of the museums that hold the paintings.',
     'home.aboutCta': 'About the archive',
 
     // ---------------------------------------------------------------- works
@@ -107,7 +108,7 @@ export const ui = {
 
     'periods.p1name': 'Nuenen',
     'periods.p1dates': '1883–1885',
-    'periods.p1place': 'the Netherlands',
+    'periods.p1place': 'The Netherlands',
     'periods.p1body':
       'Van Gogh moved back into his parents’ house in Nuenen in 1883 and spent two years painting the people who worked around the village — weavers at their looms, farmers in the fields. The palette is earth and shadow. The Potato Eaters, painted in April and May 1885, closes the period.',
 

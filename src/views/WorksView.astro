@@ -15,7 +15,7 @@ const filters = CATEGORIES.map((c) => ({
 
 <!-- the count lives on the filter row, where it tracks the active category.
      Printing the same total twice on one screen reads as a mistake. -->
-<PageHeader label={t('common.index')} title={t('works.title')} lead={t('works.lead')} />
+<PageHeader title={t('works.title')} lead={t('works.lead')} divider={false} />
 
 <div class="shell">
   <nav class="filters" aria-label={t('works.filterLabel')}>
