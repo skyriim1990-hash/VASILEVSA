@@ -1,9 +1,9 @@
 {
-  "name": "vasilevsa",
+  "name": "vangogh-archive",
   "type": "module",
   "version": "0.1.0",
   "private": true,
-  "description": "Official website of contemporary artist Alexandre Vassilev-Vasilevsa",
+  "description": "An independent concept archive of ten paintings by Vincent van Gogh, arranged by the places where he worked.",
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",

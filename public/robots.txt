@@ -2,5 +2,5 @@ User-agent: *
 Allow: /
 Disallow: /admin
 
-# Replace example.com with the production domain, here and in astro.config.mjs.
-Sitemap: https://example.com/sitemap-index.xml
+# Keep this domain in step with `site` in astro.config.mjs.
+Sitemap: https://vasilevsa.vercel.app/sitemap-index.xml
