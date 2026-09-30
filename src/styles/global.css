@@ -52,12 +52,14 @@
      5.2:1 against the darkest of them. */
   --ink-on-tint: #5f5c56;
 
-  /* One family for the whole public site. Golos Text covers Latin and
-     Cyrillic on its own, so nothing changes face mid-sentence around a Latin
-     term, and display sizes are set in the same grotesque as body copy.
-     The admin panel keeps its own pair of families in src/styles/admin.css;
-     that file has its own :root and is never loaded together with this one. */
-  --sans: 'Golos Text', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  /* Inter for body, navigation, metadata and UI. Headings and display type use
+     Playfair Display, set below in --display. The admin panel keeps its own
+     families in src/styles/admin.css; that file has its own :root and is never
+     loaded together with this one. */
+  --sans: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+
+  /* Display and headings. */
+  --display: 'Playfair Display', Georgia, 'Times New Roman', serif;
 
   /* fluid type scale.
      The display step used to grow at 10.5vw, a rate set against a condensed
@@ -195,7 +197,8 @@ a {
    type needs. */
 .display,
 .serif {
-  font-family: var(--sans);
+  font-family: var(--display);
+  font-variant-numeric: lining-nums;
   font-weight: 400;
   letter-spacing: -0.012em;
 }
@@ -214,7 +217,8 @@ a {
 
 h1,
 .h1 {
-  font-family: var(--sans);
+  font-family: var(--display);
+  font-variant-numeric: lining-nums;
   font-size: var(--fs-h1);
   font-weight: 400;
   line-height: 0.98;
@@ -223,7 +227,8 @@ h1,
 
 h2,
 .h2 {
-  font-family: var(--sans);
+  font-family: var(--display);
+  font-variant-numeric: lining-nums;
   font-size: var(--fs-h2);
   font-weight: 400;
   line-height: 1.04;
@@ -232,7 +237,8 @@ h2,
 
 h3,
 .h3 {
-  font-family: var(--sans);
+  font-family: var(--display);
+  font-variant-numeric: lining-nums;
   font-size: var(--fs-h3);
   font-weight: 400;
   line-height: 1.15;
@@ -411,32 +417,6 @@ h3,
 .link:hover::before,
 .link:focus-visible::before {
   transform: scaleX(1);
-}
-
-.link__arrow {
-  width: 2.4em;
-  height: 1px;
-  background: currentColor;
-  position: relative;
-  flex: none;
-  transition: width 500ms var(--ease);
-}
-
-.link__arrow::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 50%;
-  width: 6px;
-  height: 6px;
-  border-top: 1px solid currentColor;
-  border-right: 1px solid currentColor;
-  transform: translateY(-50%) rotate(45deg);
-}
-
-.link:hover .link__arrow,
-.link:focus-visible .link__arrow {
-  width: 3.4em;
 }
 
 /* ---------------------------------------------------------------- reveal */

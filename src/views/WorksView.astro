@@ -170,7 +170,7 @@ const filters = CATEGORIES.map((c) => ({
 
       if (empty instanceof HTMLElement) empty.hidden = visible > 0;
       if (counter instanceof HTMLElement) {
-        counter.textContent = visible ? `${String(visible).padStart(2, '0')} ${countLabel}`.trim() : '';
+        counter.textContent = visible ? `${visible} ${countLabel}`.trim() : '';
       }
 
       buttons.forEach((btn) => {

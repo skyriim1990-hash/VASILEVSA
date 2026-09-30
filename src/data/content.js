@@ -317,10 +317,10 @@ export const CATEGORIES = [ALL, ...(remotePeriods.length > 0 ? remotePeriods : P
    sites are unchanged. They close over the resolved list above rather than
    over the static one. */
 
-/** Sequential display number, e.g. "04" — also used on the placeholders. */
+/** Sequential display number, e.g. "4" — also used on the placeholders. */
 export function artworkIndex(id) {
   const i = artworks.findIndex((a) => a.id === id);
-  return String(i + 1).padStart(2, '0');
+  return String(i + 1);
 }
 
 /** `selected: true` items, in order — used on the homepage. */

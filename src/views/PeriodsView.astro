@@ -19,11 +19,11 @@ const t = useTranslations(lang);
  * pixels tall and swallows the text beside it.
  */
 const PERIODS = [
-  { n: '01', slug: 'nuenen', side: 'left' },
-  { n: '02', slug: 'paris', side: 'right' },
-  { n: '03', slug: 'arles', side: 'left' },
-  { n: '04', slug: 'saint-remy', side: 'right' },
-  { n: '05', slug: 'auvers', side: 'left' },
+  { n: '1', slug: 'nuenen', side: 'left' },
+  { n: '2', slug: 'paris', side: 'right' },
+  { n: '3', slug: 'arles', side: 'left' },
+  { n: '4', slug: 'saint-remy', side: 'right' },
+  { n: '5', slug: 'auvers', side: 'left' },
 ];
 
 /** Portrait formats get the narrower share of the grid. */
@@ -132,7 +132,6 @@ const linkFor = (p) =>
     <div class="periods-foot__inner reveal">
       <a class="link" href={path('/works', lang)}>
         <span>{t('common.viewAll')}</span>
-        <span class="link__arrow" aria-hidden="true"></span>
       </a>
     </div>
   </div>

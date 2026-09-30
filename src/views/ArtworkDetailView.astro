@@ -26,7 +26,6 @@ const incomplete = !artwork.title || !artwork.year || !artwork.medium || !artwor
   <div class="shell">
     <div class="work__crumb">
       <a class="work__back" href={path('/works', lang)}>
-        <span class="work__back-arrow" aria-hidden="true"></span>
         <span>{t('common.back')}</span>
       </a>
       <p class="micro work__index">{index}</p>
@@ -74,7 +73,6 @@ const incomplete = !artwork.title || !artwork.year || !artwork.medium || !artwor
         <div class="work__cta reveal" data-delay="3">
           <a class="link" href={path('/contact', lang)}>
             <span>{t('detail.enquire')}</span>
-            <span class="link__arrow" aria-hidden="true"></span>
           </a>
         </div>
       </div>
@@ -130,30 +128,6 @@ const incomplete = !artwork.title || !artwork.year || !artwork.medium || !artwor
 
   .work__back:hover {
     color: var(--accent-ink);
-  }
-
-  .work__back-arrow {
-    width: 2rem;
-    height: 1px;
-    background: currentColor;
-    position: relative;
-    transition: width 450ms var(--ease);
-  }
-
-  .work__back-arrow::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 50%;
-    width: 6px;
-    height: 6px;
-    border-bottom: 1px solid currentColor;
-    border-left: 1px solid currentColor;
-    transform: translateY(-50%) rotate(45deg);
-  }
-
-  .work__back:hover .work__back-arrow {
-    width: 2.75rem;
   }
 
   .work__index {

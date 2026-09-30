@@ -58,7 +58,7 @@ const links = ROUTES.map((r) => ({
         links.map((l, i) => (
           <li style={`--i: ${i}`}>
             <a href={l.href} class:list={['sheet__link', l.active && 'is-active']} aria-current={l.active ? 'page' : undefined}>
-              <span class="sheet__num">{String(i + 1).padStart(2, '0')}</span>
+              <span class="sheet__num">{String(i + 1)}</span>
               <span>{l.label}</span>
             </a>
           </li>

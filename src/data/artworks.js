@@ -228,10 +228,10 @@ export const artworks = [
   },
 ];
 
-/** Sequential display number, e.g. "04" — also used on the placeholders. */
+/** Sequential display number, e.g. "4" — also used on the placeholders. */
 export function artworkIndex(id) {
   const i = artworks.findIndex((a) => a.id === id);
-  return String(i + 1).padStart(2, '0');
+  return String(i + 1);
 }
 
 /** `selected: true` items, in data order — used on the homepage. */
