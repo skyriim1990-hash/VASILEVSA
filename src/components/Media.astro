@@ -17,6 +17,7 @@
  */
 
 import { useTranslations, getLangFromUrl } from '../i18n/utils.js';
+import { imageSrcSet } from '../lib/supabase/storage.js';
 
 /* The short label is the same string on every frame, so it is read from
    the dictionary here rather than threaded through a dozen call sites.
@@ -40,6 +41,18 @@ const {
 } = Astro.props;
 
 const hasImage = Boolean(src);
+
+/* Resized copies from Supabase Storage, so a small frame does not download the
+   full original. `src` stays the original URL as the fallback. The srcset is
+   empty for any image that is not a public Supabase object. */
+const srcset = imageSrcSet(src, [640, 960, 1280, 1600]);
+
+/* Browsers do not fall back to `src` when the srcset candidate they chose fails
+   to load. One inline handler does it: drop the srcset and reload the original.
+   `onerror = null` stops it from running twice. Only set when there is a srcset. */
+const fallback = srcset
+  ? "this.onerror=null;this.removeAttribute('srcset');this.removeAttribute('sizes');this.src=this.getAttribute('src')"
+  : undefined;
 ---
 
 <figure
@@ -50,8 +63,10 @@ const hasImage = Boolean(src);
     hasImage ? (
       <img
         src={src}
+        srcset={srcset || undefined}
         alt={alt}
-        sizes={sizes}
+        sizes={srcset ? sizes : undefined}
+        onerror={fallback}
         loading={priority ? 'eager' : 'lazy'}
         decoding="async"
         fetchpriority={priority ? 'high' : 'auto'}

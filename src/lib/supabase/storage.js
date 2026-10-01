@@ -57,6 +57,49 @@ export function publicUrl(bucket, objectPath) {
   return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${encodeURI(clean)}`;
 }
 
+const PUBLIC_OBJECT = '/storage/v1/object/public/';
+const RENDER_IMAGE = '/storage/v1/render/image/public/';
+
+/**
+ * URL of a resized copy of a public Supabase image, served by Storage's image
+ * transformations. The original object is left as it is.
+ *
+ * `resize=contain` is required. Without it Supabase defaults to `cover`, which
+ * with only a width crops the picture to that width and keeps the original
+ * height instead of scaling it. `contain` keeps the aspect ratio and never
+ * enlarges past the original.
+ *
+ * Returns '' for anything that is not a public Supabase object URL, so a caller
+ * can fall back to the original `src`.
+ *
+ * @param {string} url  a URL made by publicUrl()
+ * @param {{ width: number, quality?: number }} options
+ */
+export function transformUrl(url, { width, quality = 85 }) {
+  const source = String(url ?? '');
+  if (!source.includes(PUBLIC_OBJECT) || !width) return '';
+
+  return `${source.replace(PUBLIC_OBJECT, RENDER_IMAGE)}?width=${width}&resize=contain&quality=${quality}`;
+}
+
+/**
+ * A `srcset` value for a public Supabase image, or '' when there is none.
+ *
+ * @param {string} url
+ * @param {number[]} widths
+ * @param {number} [quality]
+ */
+export function imageSrcSet(url, widths, quality) {
+  const entries = widths
+    .map((width) => {
+      const resized = transformUrl(url, { width, quality });
+      return resized ? `${resized} ${width}w` : '';
+    })
+    .filter(Boolean);
+
+  return entries.join(', ');
+}
+
 /**
  * Uploads a file. Browser or server, whichever client is passed in.
  *

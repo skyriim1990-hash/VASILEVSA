@@ -55,13 +55,31 @@ function orientation(ratio) {
   if (!Number.isFinite(w) || !Number.isFinite(h) || h === 0) return 'landscape';
   return w / h < 0.8 ? 'portrait' : 'landscape';
 }
+
+/**
+ * The width a card is displayed at, as a `sizes` value, following the span the
+ * rules below give its cell: the cycle of seven, the wide work, the portrait
+ * veto and its 78% inset. Percentages are of the viewport and err on the large
+ * side, so the browser never picks a smaller file than the frame needs.
+ */
+function cardSizes(index, ratio) {
+  const portrait = orientation(ratio) === 'portrait';
+  const slot = index % 7;
+  const wide = slot === 5 && !portrait;
+  const large = slot <= 1 && !portrait;
+
+  const tablet = wide ? 92 : portrait ? 36 : 45;
+  const desktop = wide ? 61 : large ? 46 : portrait ? 24 : 30;
+
+  return `(max-width: 620px) 92vw, (max-width: 1000px) ${tablet}vw, ${desktop}vw`;
+}
 ---
 
 <div class="works-grid" data-grid>
   {
     items.map((artwork, i) => (
       <div class="works-grid__cell reveal" data-category={artwork.category} data-orient={orientation(artwork.ratio)} data-delay={String((i % 3) + 1)}>
-        <ArtworkCard artwork={artwork} index={artworkIndex(artwork.id)} lang={lang} />
+        <ArtworkCard artwork={artwork} index={artworkIndex(artwork.id)} lang={lang} priority={i === 0} sizes={cardSizes(i, artwork.ratio)} />
       </div>
     ))
   }
