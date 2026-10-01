@@ -3,20 +3,22 @@ import PageHeader from '../components/PageHeader.astro';
 import { useTranslations } from '../i18n/utils.js';
 
 /**
- * Privacy and Terms share this shell. No legal text is invented here —
- * the page states plainly that the copy is still to be written, and the
- * structure is ready for it.
+ * Privacy and Terms share this shell; each page brings its own copy, keyed by
+ * `topic` in the dictionary (legal.<topic>.lead, .p1, .p2 ...). The text
+ * states only what the site does and does not do — it is not a legal document.
  */
-const { lang = 'en', title } = Astro.props;
+const { lang = 'en', title, topic } = Astro.props;
 const t = useTranslations(lang);
+
+const paragraphs = ['p1', 'p2', 'p3'].map((key) => t(`legal.${topic}.${key}`));
 ---
 
 <PageHeader title={title} />
 
 <section class="section--tight">
   <div class="shell legal">
-    <p class="legal__pending">{t('legal.pending')}</p>
-    <p class="body legal__note">{t('legal.note')}</p>
+    <p class="legal__pending">{t(`legal.${topic}.lead`)}</p>
+    {paragraphs.map((text) => <p class="body legal__note">{text}</p>)}
   </div>
 </section>
 

@@ -53,7 +53,7 @@ const { items = [], lang = 'en' } = Astro.props;
 function orientation(ratio) {
   const [w, h] = String(ratio ?? '').split('/').map((n) => parseFloat(n));
   if (!Number.isFinite(w) || !Number.isFinite(h) || h === 0) return 'landscape';
-  return w / h < 0.8 ? 'portrait' : 'landscape';
+  return w / h < 0.85 ? 'portrait' : 'landscape';
 }
 
 /**

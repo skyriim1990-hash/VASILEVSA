@@ -101,7 +101,7 @@ export const ui = {
     'detail.about': 'About the work',
     'detail.pendingNote':
       'Full details for this work will be published once the archive entry is complete.',
-    'detail.enquire': 'About this project',
+    'detail.enquire': 'Contact',
 
     // ---------------------------------------------------------------- periods
     'periods.title': 'Periods',
@@ -156,7 +156,7 @@ export const ui = {
       'This is an independent concept project: a design and development exercise, not an institutional publication. The paintings are public-domain reproductions. Titles, dates, media and dimensions follow the records of the museums that hold the works.',
 
     // ---------------------------------------------------------------- project page
-    'contact.title': 'About this project',
+    'contact.title': 'Contact',
     'contact.p1':
       'This site is an independent concept portfolio — a design and development exercise built around the work of Vincent van Gogh. It is not connected to any museum, foundation or estate, and nothing here is for sale.',
     'contact.p2':
@@ -173,10 +173,22 @@ export const ui = {
     // ---------------------------------------------------------------- legal
     'legal.privacy': 'Privacy',
     'legal.terms': 'Terms',
-    'legal.pending':
-      'The legal text for this page has not been drafted yet. It will be published before the site goes live.',
-    'legal.note':
-      'The site sets no tracking cookies and runs no analytics in its current form.',
+    'legal.privacy.lead':
+      'This is an independent concept project, not a service run by a company or an institution. This page is a plain statement, not a formal privacy policy.',
+    'legal.privacy.p1':
+      'Visitors are not asked to sign in or fill in forms. The site sets no tracking cookies and runs no analytics.',
+    'legal.privacy.p2':
+      'To show the pages, your browser requests them from Vercel, which hosts the site. The artwork images are served from Supabase Storage, and the typefaces, Inter and Playfair Display, are loaded from Google Fonts. Those requests go to those services directly.',
+    'legal.privacy.p3':
+      'The Contact page lists an email address and has no contact form.',
+    'legal.terms.lead':
+      'This site is an independent concept project: a design and development exercise built around the work of Vincent van Gogh. It is not an official site and is not affiliated with any museum, foundation, estate or other institution named in it.',
+    'legal.terms.p1':
+      'Nothing here is for sale, and the site offers no services.',
+    'legal.terms.p2':
+      'The paintings are public-domain reproductions from Wikimedia Commons. Titles, dates, media and dimensions follow the records of the museums that hold the originals, and may contain mistakes.',
+    'legal.terms.p3':
+      'For corrections or questions, write to the address on the Contact page.',
 
     // ---------------------------------------------------------------- 404
     '404.title': 'Page not found',

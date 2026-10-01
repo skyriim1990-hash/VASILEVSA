@@ -8,16 +8,25 @@ import { CATEGORIES } from '../data/content.js';
  * em dash. Real values pass straight through.
  */
 
+/**
+ * Typographic apostrophe for display. A straight ' that follows a letter or a
+ * digit (Gogh's, parents') is printed as ’. A quote that opens a word is left
+ * alone. Only the printed text changes — the stored title and the slug do not.
+ */
+export function typographic(text) {
+  return String(text ?? '').replace(/(?<=[\p{L}\p{N}])'/gu, '’');
+}
+
 /** Title to print for an artwork — never a fabricated one. */
 export function displayTitle(artwork, t, index) {
-  return artwork.title || `${t('ph.artwork')} ${index}`;
+  return typographic(artwork.title) || `${t('ph.artwork')} ${index}`;
 }
 
 /** Alt text — falls back to the placeholder label, so it is never empty. */
 export function displayAlt(artwork, t, index) {
   if (artwork.alt) return artwork.alt;
   if (artwork.title) {
-    return [artwork.title, artwork.year, artwork.medium].filter(Boolean).join(', ');
+    return typographic([artwork.title, artwork.year, artwork.medium].filter(Boolean).join(', '));
   }
   return `${t('ph.artwork')} ${index}`;
 }

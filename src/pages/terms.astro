@@ -6,6 +6,6 @@ import { useTranslations } from '../i18n/utils.js';
 const t = useTranslations('en');
 ---
 
-<BaseLayout lang="en" title={t('legal.terms')} description={t('legal.pending')}>
-  <LegalView lang="en" title={t('legal.terms')} />
+<BaseLayout lang="en" title={t('legal.terms')} description={t('legal.terms.lead')}>
+  <LegalView lang="en" title={t('legal.terms')} topic="terms" />
 </BaseLayout>
