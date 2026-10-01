@@ -90,6 +90,7 @@ export const ui = {
       'Paintings arranged by the places they were made in.',
     'works.filterLabel': 'Filter works by period',
     'works.count': 'works',
+    'works.countOne': 'work',
     'works.empty': 'No works from this period yet.',
 
     // ---------------------------------------------------------------- detail

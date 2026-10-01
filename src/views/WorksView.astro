@@ -35,7 +35,7 @@ const filters = CATEGORIES.map((c) => ({
         ))
       }
     </ul>
-    <p class="filters__count micro" data-filter-count data-label={t('works.count')} aria-live="polite"></p>
+    <p class="filters__count micro" data-filter-count data-label={t('works.count')} data-label-one={t('works.countOne')} aria-live="polite"></p>
   </nav>
 </div>
 
@@ -143,6 +143,7 @@ const filters = CATEGORIES.map((c) => ({
 
   if (buttons.length && cells.length) {
     const countLabel = counter instanceof HTMLElement ? counter.dataset.label || '' : '';
+    const countOne = counter instanceof HTMLElement ? counter.dataset.labelOne || countLabel : '';
 
     const matches = (cell, filter) => filter === 'all' || cell.dataset.category === filter;
 
@@ -170,7 +171,7 @@ const filters = CATEGORIES.map((c) => ({
 
       if (empty instanceof HTMLElement) empty.hidden = visible > 0;
       if (counter instanceof HTMLElement) {
-        counter.textContent = visible ? `${visible} ${countLabel}`.trim() : '';
+        counter.textContent = visible ? `${visible} ${visible === 1 ? countOne : countLabel}`.trim() : '';
       }
 
       buttons.forEach((btn) => {
