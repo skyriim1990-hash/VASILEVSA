@@ -300,10 +300,8 @@ const portraitAlt = portrait ? displayAlt(portrait, t, artworkIndex(portrait.id)
 
   .opening__cta {
     display: flex;
-    justify-content: flex-end;
+    justify-content: flex-start;
     margin-top: clamp(1.75rem, 3vw, 2.5rem);
-    /* the link sits right-aligned in its column, against the collage */
-    padding-right: clamp(0rem, 3vw, 3rem);
   }
 
   .opening__caption {
@@ -451,11 +449,6 @@ const portraitAlt = portrait ? displayAlt(portrait, t, artworkIndex(portrait.id)
       align-items: start;
       gap: clamp(0.75rem, 3vw, 1.25rem);
       margin-top: 0;
-    }
-
-    .opening__cta {
-      justify-content: flex-start;
-      padding-right: 0;
     }
 
     .spread__cell--1 { grid-column: 1 / span 7; }
