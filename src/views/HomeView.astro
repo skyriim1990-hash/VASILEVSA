@@ -78,7 +78,7 @@ const portrait = artworks.find((a) => a.id === 'self-portrait-with-grey-felt-hat
 const portraitAlt = portrait ? displayAlt(portrait, t, artworkIndex(portrait.id)) : '';
 ---
 
-<!-- ================================================== OPENING SPREAD -->
+{/* ================================================== OPENING SPREAD */}
 <section class="opening">
   <div class="shell opening__inner">
     <div class="opening__head">
@@ -153,7 +153,7 @@ const portraitAlt = portrait ? displayAlt(portrait, t, artworkIndex(portrait.id)
   </div>
 </section>
 
-<!-- ================================================== SELECTED WORKS -->
+{/* ================================================== SELECTED WORKS */}
 <section class="section home-field on-tone" aria-labelledby="selected">
   <div class="shell">
     <SectionHeader id="selected" label={t('home.selected')} note={t('home.selectedNote')} />
@@ -182,7 +182,7 @@ const portraitAlt = portrait ? displayAlt(portrait, t, artworkIndex(portrait.id)
   </div>
 </section>
 
-<!-- ================================================== PERIODS -->
+{/* ================================================== PERIODS */}
 {/* One line and a link, on its own sheet of paper. The band that stood here
     introduced a project with a photograph, statistics and a paragraph; the
     periods need none of that on the homepage, because the page they lead to
@@ -200,7 +200,7 @@ const portraitAlt = portrait ? displayAlt(portrait, t, artworkIndex(portrait.id)
   </div>
 </section>
 
-<!-- ================================================== ABOUT TEASER -->
+{/* ================================================== ABOUT TEASER */}
 <section class="section" aria-labelledby="about-teaser">
   <div class="shell about-teaser">
     <div class="about-teaser__media reveal">
