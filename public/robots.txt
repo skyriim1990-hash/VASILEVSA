@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin
 
 # Keep this domain in step with `site` in astro.config.mjs.
-Sitemap: https://vasilevsa.vercel.app/sitemap-index.xml
+Sitemap: https://van-gogh-archive.vercel.app/sitemap-index.xml

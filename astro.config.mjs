@@ -31,7 +31,7 @@ import vercel from '@astrojs/vercel';
  * because dev never loads an adapter at all.
  */
 export default defineConfig({
-  site: 'https://vasilevsa.vercel.app',
+  site: 'https://van-gogh-archive.vercel.app',
   trailingSlash: 'ignore',
   adapter: vercel(),
   /* The two routes the previous concept owned. Nothing external links to them,

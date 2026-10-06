@@ -44,7 +44,7 @@ npm run preview  # see the note below
 
 ## Production
 
-https://vasilevsa.vercel.app/
+https://van-gogh-archive.vercel.app/
 
 ## Project notes
 
